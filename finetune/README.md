@@ -268,6 +268,15 @@ uv run train.py sft --config configs/wiki_rag_answer.yaml
 That path produces a second LoRA adapter focused on grounded answers with
 numbered citations.
 
+Evaluate that adapter with the matching cited-answer evaluator:
+
+```bash
+uv run python eval_wiki_rag_answer.py outputs/wiki-rag-answer --max-examples 5
+```
+
+Do not use `eval.py` for this adapter; `eval.py` evaluates the query-expansion
+model and will prompt the adapter to expand search queries.
+
 The reward function is entirely rule-based (no LLM judge) which makes it fast,
 deterministic, and suitable as an RL signal. See `SCORING.md` for the full rubric.
 
