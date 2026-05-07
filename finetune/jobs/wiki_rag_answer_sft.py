@@ -64,6 +64,7 @@ def build_text(example: dict, tokenizer) -> str:
     prompt = [
         "/no_think Answer the question using only the provided sources.",
         "Cite every factual claim with bracketed citations like [1].",
+        "End every answer with a Sources section listing the cited source titles and URLs.",
         "If the sources do not support the answer, say so clearly.",
         "",
         f"Question: {question}",

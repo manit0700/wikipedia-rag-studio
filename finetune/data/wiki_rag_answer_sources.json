@@ -169,12 +169,274 @@
   },
   {
     "question": "How should the model respond when evidence is weak?",
-    "answer": "When evidence is weak, the model should say it cannot verify the claim from the retrieved sources instead of guessing or inventing a citation.",
+    "answer": "When evidence is weak, the model should say it cannot verify the claim from the retrieved sources instead of guessing or inventing a citation.\n\nSources:\nNone provided.",
     "sources": []
   },
   {
     "question": "What is the favorite color of Ada Lovelace?",
-    "answer": "I could not verify Ada Lovelace's favorite color from the retrieved Wikipedia sources.",
+    "answer": "I could not verify Ada Lovelace's favorite color from the retrieved Wikipedia sources.\n\nSources:\nNone provided.",
+    "sources": []
+  },
+  {
+    "question": "What is photosynthesis?",
+    "answer": "Photosynthesis is the process plants, algae, and some bacteria use to convert light energy into chemical energy, usually producing sugars from carbon dioxide and water. [1]\n\nSources:\n[1] Photosynthesis — https://en.wikipedia.org/wiki/Photosynthesis\n    Photosynthesis is a process used by plants and other organisms to convert light energy into chemical energy.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Photosynthesis",
+        "url": "https://en.wikipedia.org/wiki/Photosynthesis",
+        "excerpt": "Photosynthesis is a process used by plants and other organisms to convert light energy into chemical energy."
+      }
+    ]
+  },
+  {
+    "question": "Why is the water cycle important?",
+    "answer": "The water cycle is important because it moves water through evaporation, condensation, precipitation, and runoff, helping distribute freshwater across Earth's surface and atmosphere. [1]\n\nSources:\n[1] Water cycle — https://en.wikipedia.org/wiki/Water_cycle\n    The water cycle describes the continuous movement of water on, above, and below the surface of the Earth.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Water cycle",
+        "url": "https://en.wikipedia.org/wiki/Water_cycle",
+        "excerpt": "The water cycle describes the continuous movement of water on, above, and below the surface of the Earth."
+      }
+    ]
+  },
+  {
+    "question": "What does DNA do?",
+    "answer": "DNA stores genetic instructions used by living organisms for development, functioning, growth, and reproduction. [1]\n\nSources:\n[1] DNA — https://en.wikipedia.org/wiki/DNA\n    DNA is a polymer composed of two polynucleotide chains that stores genetic information.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "DNA",
+        "url": "https://en.wikipedia.org/wiki/DNA",
+        "excerpt": "DNA is a polymer composed of two polynucleotide chains that stores genetic information."
+      }
+    ]
+  },
+  {
+    "question": "How are mitosis and meiosis different?",
+    "answer": "Mitosis produces genetically similar body cells for growth and repair, while meiosis produces reproductive cells with reduced chromosome number for sexual reproduction. [1][2]\n\nSources:\n[1] Mitosis — https://en.wikipedia.org/wiki/Mitosis\n    Mitosis is part of the cell cycle in which replicated chromosomes are separated into two new nuclei.\n[2] Meiosis — https://en.wikipedia.org/wiki/Meiosis\n    Meiosis is a special type of cell division of germ cells in sexually reproducing organisms.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Mitosis",
+        "url": "https://en.wikipedia.org/wiki/Mitosis",
+        "excerpt": "Mitosis is part of the cell cycle in which replicated chromosomes are separated into two new nuclei."
+      },
+      {
+        "id": 2,
+        "title": "Meiosis",
+        "url": "https://en.wikipedia.org/wiki/Meiosis",
+        "excerpt": "Meiosis is a special type of cell division of germ cells in sexually reproducing organisms."
+      }
+    ]
+  },
+  {
+    "question": "What is Newton's second law?",
+    "answer": "Newton's second law states that an object's acceleration depends on the net force acting on it and the object's mass, often written as F = ma. [1]\n\nSources:\n[1] Newton's laws of motion — https://en.wikipedia.org/wiki/Newton%27s_laws_of_motion\n    Newton's second law states that the rate of change of momentum of a body is directly proportional to the force applied.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Newton's laws of motion",
+        "url": "https://en.wikipedia.org/wiki/Newton%27s_laws_of_motion",
+        "excerpt": "Newton's second law states that the rate of change of momentum of a body is directly proportional to the force applied."
+      }
+    ]
+  },
+  {
+    "question": "What is the greenhouse effect?",
+    "answer": "The greenhouse effect is the warming of Earth's surface and lower atmosphere when greenhouse gases absorb and emit infrared radiation. [1]\n\nSources:\n[1] Greenhouse effect — https://en.wikipedia.org/wiki/Greenhouse_effect\n    The greenhouse effect occurs when greenhouse gases in a planet's atmosphere trap heat.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Greenhouse effect",
+        "url": "https://en.wikipedia.org/wiki/Greenhouse_effect",
+        "excerpt": "The greenhouse effect occurs when greenhouse gases in a planet's atmosphere trap heat."
+      }
+    ]
+  },
+  {
+    "question": "Why are vaccines important?",
+    "answer": "Vaccines are important because they stimulate immune responses that help protect people from infectious diseases before exposure to the actual pathogen. [1]\n\nSources:\n[1] Vaccine — https://en.wikipedia.org/wiki/Vaccine\n    A vaccine is a biological preparation that provides active acquired immunity to a particular infectious or malignant disease.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Vaccine",
+        "url": "https://en.wikipedia.org/wiki/Vaccine",
+        "excerpt": "A vaccine is a biological preparation that provides active acquired immunity to a particular infectious or malignant disease."
+      }
+    ]
+  },
+  {
+    "question": "What is an algorithm?",
+    "answer": "An algorithm is a finite sequence of well-defined instructions used to solve a problem or perform a computation. [1]\n\nSources:\n[1] Algorithm — https://en.wikipedia.org/wiki/Algorithm\n    An algorithm is a finite sequence of mathematically rigorous instructions, typically used to solve a class of specific problems.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Algorithm",
+        "url": "https://en.wikipedia.org/wiki/Algorithm",
+        "excerpt": "An algorithm is a finite sequence of mathematically rigorous instructions, typically used to solve a class of specific problems."
+      }
+    ]
+  },
+  {
+    "question": "What is the difference between HTTP and HTTPS?",
+    "answer": "HTTP is an application-layer protocol for transferring hypertext, while HTTPS uses encryption through TLS to secure HTTP communication. [1][2]\n\nSources:\n[1] HTTP — https://en.wikipedia.org/wiki/HTTP\n    HTTP is an application-layer protocol for distributed, collaborative, hypermedia information systems.\n[2] HTTPS — https://en.wikipedia.org/wiki/HTTPS\n    HTTPS is an extension of HTTP that uses encryption for secure communication over a computer network.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "HTTP",
+        "url": "https://en.wikipedia.org/wiki/HTTP",
+        "excerpt": "HTTP is an application-layer protocol for distributed, collaborative, hypermedia information systems."
+      },
+      {
+        "id": 2,
+        "title": "HTTPS",
+        "url": "https://en.wikipedia.org/wiki/HTTPS",
+        "excerpt": "HTTPS is an extension of HTTP that uses encryption for secure communication over a computer network."
+      }
+    ]
+  },
+  {
+    "question": "What is a REST API?",
+    "answer": "A REST API exposes resources through stateless operations that follow the REST architectural style, commonly using HTTP methods such as GET, POST, PUT, and DELETE. [1]\n\nSources:\n[1] REST — https://en.wikipedia.org/wiki/REST\n    REST is a software architectural style that was created to guide the design and development of the architecture for the World Wide Web.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "REST",
+        "url": "https://en.wikipedia.org/wiki/REST",
+        "excerpt": "REST is a software architectural style that was created to guide the design and development of the architecture for the World Wide Web."
+      }
+    ]
+  },
+  {
+    "question": "What is object-oriented programming?",
+    "answer": "Object-oriented programming organizes software around objects that combine data with behavior, often using concepts such as classes, methods, inheritance, and encapsulation. [1]\n\nSources:\n[1] Object-oriented programming — https://en.wikipedia.org/wiki/Object-oriented_programming\n    Object-oriented programming is a programming paradigm based on the concept of objects.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Object-oriented programming",
+        "url": "https://en.wikipedia.org/wiki/Object-oriented_programming",
+        "excerpt": "Object-oriented programming is a programming paradigm based on the concept of objects."
+      }
+    ]
+  },
+  {
+    "question": "What is Git used for?",
+    "answer": "Git is used for distributed version control, allowing developers to track changes, manage branches, and coordinate work on source code. [1]\n\nSources:\n[1] Git — https://en.wikipedia.org/wiki/Git\n    Git is a distributed version control system that tracks versions of files.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Git",
+        "url": "https://en.wikipedia.org/wiki/Git",
+        "excerpt": "Git is a distributed version control system that tracks versions of files."
+      }
+    ]
+  },
+  {
+    "question": "What is continuous integration?",
+    "answer": "Continuous integration is a software practice where developers frequently merge code changes and automated builds or tests verify those changes. [1]\n\nSources:\n[1] Continuous integration — https://en.wikipedia.org/wiki/Continuous_integration\n    Continuous integration is the practice of merging all developers' working copies to a shared mainline several times a day.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Continuous integration",
+        "url": "https://en.wikipedia.org/wiki/Continuous_integration",
+        "excerpt": "Continuous integration is the practice of merging all developers' working copies to a shared mainline several times a day."
+      }
+    ]
+  },
+  {
+    "question": "What is software as a service?",
+    "answer": "Software as a service is a software delivery model where applications are hosted centrally and accessed by users over a network, often through a web browser. [1]\n\nSources:\n[1] Software as a service — https://en.wikipedia.org/wiki/Software_as_a_service\n    Software as a service is a software licensing and delivery model in which software is licensed on a subscription basis and centrally hosted.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Software as a service",
+        "url": "https://en.wikipedia.org/wiki/Software_as_a_service",
+        "excerpt": "Software as a service is a software licensing and delivery model in which software is licensed on a subscription basis and centrally hosted."
+      }
+    ]
+  },
+  {
+    "question": "What is a supply chain?",
+    "answer": "A supply chain is the system of organizations, people, activities, information, and resources involved in moving a product or service from supplier to customer. [1]\n\nSources:\n[1] Supply chain — https://en.wikipedia.org/wiki/Supply_chain\n    A supply chain is a system of organizations, people, activities, information, and resources involved in supplying a product or service to a consumer.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Supply chain",
+        "url": "https://en.wikipedia.org/wiki/Supply_chain",
+        "excerpt": "A supply chain is a system of organizations, people, activities, information, and resources involved in supplying a product or service to a consumer."
+      }
+    ]
+  },
+  {
+    "question": "What is pharmaceutical serialization?",
+    "answer": "Pharmaceutical serialization assigns unique identifiers to drug packages so products can be tracked and verified through the supply chain. [1]\n\nSources:\n[1] Pharmaceutical serialization — https://en.wikipedia.org/wiki/Pharmaceutical_serialization\n    Pharmaceutical serialization is the process of assigning unique serial numbers to each saleable unit of a prescription product.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Pharmaceutical serialization",
+        "url": "https://en.wikipedia.org/wiki/Pharmaceutical_serialization",
+        "excerpt": "Pharmaceutical serialization is the process of assigning unique serial numbers to each saleable unit of a prescription product."
+      }
+    ]
+  },
+  {
+    "question": "What is traceability?",
+    "answer": "Traceability is the ability to trace the history, application, or location of an item through recorded identification and related information. [1]\n\nSources:\n[1] Traceability — https://en.wikipedia.org/wiki/Traceability\n    Traceability is the capability to trace something.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Traceability",
+        "url": "https://en.wikipedia.org/wiki/Traceability",
+        "excerpt": "Traceability is the capability to trace something."
+      }
+    ]
+  },
+  {
+    "question": "What is cloud computing?",
+    "answer": "Cloud computing provides on-demand access to computing resources such as servers, storage, and applications over a network, usually without direct active management by the user. [1]\n\nSources:\n[1] Cloud computing — https://en.wikipedia.org/wiki/Cloud_computing\n    Cloud computing is the on-demand availability of computer system resources, especially data storage and computing power.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Cloud computing",
+        "url": "https://en.wikipedia.org/wiki/Cloud_computing",
+        "excerpt": "Cloud computing is the on-demand availability of computer system resources, especially data storage and computing power."
+      }
+    ]
+  },
+  {
+    "question": "What is machine learning?",
+    "answer": "Machine learning is a field of artificial intelligence focused on algorithms that improve performance by learning patterns from data. [1]\n\nSources:\n[1] Machine learning — https://en.wikipedia.org/wiki/Machine_learning\n    Machine learning is a field of study in artificial intelligence concerned with the development and study of statistical algorithms that can learn from data.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Machine learning",
+        "url": "https://en.wikipedia.org/wiki/Machine_learning",
+        "excerpt": "Machine learning is a field of study in artificial intelligence concerned with the development and study of statistical algorithms that can learn from data."
+      }
+    ]
+  },
+  {
+    "question": "What is retrieval-augmented generation?",
+    "answer": "Retrieval-augmented generation combines information retrieval with text generation so a model can answer using externally retrieved documents instead of relying only on its parameters. [1]\n\nSources:\n[1] Retrieval-augmented generation — https://en.wikipedia.org/wiki/Retrieval-augmented_generation\n    Retrieval-augmented generation is a technique that retrieves documents relevant to a query and uses them to generate responses.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Retrieval-augmented generation",
+        "url": "https://en.wikipedia.org/wiki/Retrieval-augmented_generation",
+        "excerpt": "Retrieval-augmented generation is a technique that retrieves documents relevant to a query and uses them to generate responses."
+      }
+    ]
+  },
+  {
+    "question": "What should the model do if no sources are provided?",
+    "answer": "If no sources are provided, the model should not invent facts or citations. It should state that it cannot verify the answer from the retrieved sources.\n\nSources:\nNone provided.",
+    "sources": []
+  },
+  {
+    "question": "Who invented the first smartphone?",
+    "answer": "I could not verify who invented the first smartphone from the retrieved Wikipedia sources.\n\nSources:\nNone provided.",
     "sources": []
   }
 ]
