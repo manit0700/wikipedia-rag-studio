@@ -11,6 +11,7 @@ dataset:
   eval_split: 0.15
 
 training:
+  precision: "fp16"
   epochs: 4
   batch_size: 4
   gradient_accumulation_steps: 4

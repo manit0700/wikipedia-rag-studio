@@ -39,6 +39,19 @@ import yaml
 from transformers import TrainerCallback
 
 
+def precision_flags(training_cfg: dict) -> dict[str, bool]:
+    precision = str(training_cfg.get("precision", "bf16")).strip().lower()
+    if precision == "bf16":
+        return {"bf16": True, "fp16": False}
+    if precision == "fp16":
+        return {"bf16": False, "fp16": True}
+    if precision in {"none", "off", "false", "0"}:
+        return {"bf16": False, "fp16": False}
+    raise ValueError(
+        f"Unsupported precision value: {precision!r}. Use 'bf16', 'fp16', or 'none'."
+    )
+
+
 def export_gguf(model, tokenizer, output_dir: str, model_name: str):
     """Export model to GGUF at Q4_K_M, Q6_K, Q8_0 quantizations."""
     import shutil
@@ -331,7 +344,7 @@ def cmd_sft(args):
         ddp_find_unused_parameters=cfg["training"].get(
             "ddp_find_unused_parameters", False
         ),
-        bf16=True,
+        **precision_flags(cfg["training"]),
         report_to=report_to,
         run_name=run_name if report_to == "trackio" else None,
     )
@@ -589,7 +602,7 @@ def cmd_grpo(args):
         save_strategy=save_strategy,
         save_steps=save_steps,
         save_total_limit=save_total_limit,
-        bf16=True,
+        **precision_flags(cfg["training"]),
         skip_memory_metrics=True,
         report_to=report_to,
         run_name=run_name if report_to == "trackio" else None,
