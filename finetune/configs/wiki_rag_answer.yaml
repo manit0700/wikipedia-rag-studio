@@ -13,10 +13,11 @@ dataset:
 training:
   precision: "fp16"
   epochs: 4
-  batch_size: 4
-  gradient_accumulation_steps: 4
+  batch_size: 1
+  gradient_accumulation_steps: 16
   learning_rate: 1.5e-4
-  max_length: 1024
+  max_length: 768
+  optim: "paged_adamw_8bit"
   warmup_ratio: 0.05
   lr_scheduler: "cosine"
   save_interval_minutes: 30
@@ -24,9 +25,10 @@ training:
   save_total_limit: 3
 
 lora:
-  rank: 16
-  alpha: 32
+  rank: 8
+  alpha: 16
   dropout: 0.0
+  modules_to_save: []
   target_modules:
     - "q_proj"
     - "k_proj"

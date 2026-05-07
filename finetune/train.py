@@ -333,6 +333,7 @@ def cmd_sft(args):
         gradient_accumulation_steps=cfg["training"]["gradient_accumulation_steps"],
         learning_rate=cfg["training"]["learning_rate"],
         max_length=cfg["training"]["max_length"],
+        optim=cfg["training"].get("optim", "adamw_torch"),
         logging_steps=10,
         save_strategy="steps",
         save_steps=save_steps,
@@ -349,8 +350,8 @@ def cmd_sft(args):
         run_name=run_name if report_to == "trackio" else None,
     )
 
-    # LoRA config with modules_to_save for embedding layers
-    # This prevents token ID mismatches during inference
+    modules_to_save = cfg["lora"].get("modules_to_save", ["embed_tokens", "lm_head"])
+
     peft_config = LoraConfig(
         r=cfg["lora"]["rank"],
         lora_alpha=cfg["lora"]["alpha"],
@@ -358,8 +359,8 @@ def cmd_sft(args):
         bias="none",
         task_type="CAUSAL_LM",
         target_modules=cfg["lora"]["target_modules"],
-        modules_to_save=["embed_tokens", "lm_head"],  # Critical for special tokens
-        ensure_weight_tying=True,
+        modules_to_save=modules_to_save or None,
+        ensure_weight_tying=bool(modules_to_save),
     )
 
     print("Loading tokenizer...")
