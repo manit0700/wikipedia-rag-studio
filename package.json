@@ -30,6 +30,10 @@
     "search": "tsx src/cli/qmd.ts search",
     "vsearch": "tsx src/cli/qmd.ts vsearch",
     "rerank": "tsx src/cli/qmd.ts rerank",
+    "wiki-rag:demo": "tsx examples/wikipedia-rag.ts demo",
+    "wiki-rag:ingest": "tsx examples/wikipedia-rag.ts ingest",
+    "wiki-rag:ask": "tsx examples/wikipedia-rag.ts ask",
+    "wiki-rag:ui": "tsx examples/wikipedia-rag-ui.ts",
     "inspector": "npx @modelcontextprotocol/inspector tsx src/cli/qmd.ts mcp",
     "release": "./scripts/release.sh"
   },

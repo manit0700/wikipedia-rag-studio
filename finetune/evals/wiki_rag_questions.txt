@@ -1,0 +1,12 @@
+Why is Ada Lovelace important?
+What did the Analytical Engine do?
+How did Charles Babbage influence early computing?
+What is the difference between BM25 and vector search?
+Why does retrieval matter more than memorization in RAG?
+What makes a citation trustworthy in an answer?
+How should the model respond when evidence is weak?
+What are the main causes of World War I?
+Explain the role of the Renaissance in European history.
+Compare the Ottoman Empire and the Byzantine Empire.
+What is the favorite color of Ada Lovelace?
+What was the exact lunch menu for Ada Lovelace on Tuesday?

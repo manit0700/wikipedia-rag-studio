@@ -40,6 +40,9 @@ These feed into QMD's three search backends:
 # 1. SFT: teach the model the output format (~45 min on A10G, ~$1.50)
 hf jobs uv run --flavor a10g-large --secrets HF_TOKEN --timeout 2h jobs/sft.py
 
+# 1b. Wikipedia RAG cited-answer adapter
+hf jobs uv run --flavor a10g-large --secrets HF_TOKEN --timeout 2h jobs/wiki_rag_answer_sft.py
+
 # 2. Evaluate against test queries (needs local GPU or use eval job)
 uv run eval.py tobil/qmd-query-expansion-1.7B
 
@@ -92,6 +95,7 @@ finetune/
 ├── convert_gguf.py    # GGUF conversion for Ollama/llama.cpp
 ├── jobs/
 │   ├── sft.py         # Self-contained SFT for HuggingFace Jobs
+│   ├── wiki_rag_answer_sft.py # Self-contained SFT for Wikipedia RAG answers
 │   ├── eval.py        # Self-contained eval for HuggingFace Jobs
 │   └── eval_common.py # Shared eval utilities
 ├── configs/
@@ -238,6 +242,32 @@ The production training approach is currently **SFT-only**:
 2. **GRPO** exists as an optional experimental path under `experiments/grpo/`
    and is not in the production training pipeline.
 
+## RAG Fine-Tuning Roadmap
+
+For the Wikipedia RAG bot, fine-tuning should be applied in this order:
+
+1. **Query rewriting** - turn a user question into stronger retrieval queries.
+2. **Citation-first answering** - teach the model to answer only from retrieved context.
+3. **Uncertainty handling** - return "I don't know" when evidence is weak.
+4. **Citation formatting** - keep every factual claim tied to a source.
+5. **Domain adaptation** - teach Wikipedia-like entity names, aliases, and section cues.
+
+See `wiki-rag-finetune.md` for the concrete training recipe, example tasks, and evaluation checklist.
+
+The first concrete dataset slice is `data/wiki_rag_query_expansion.jsonl`.
+It follows the same strict schema as the existing training data, so
+`uv run dataset/prepare_data.py` will pick it up automatically.
+
+The citation-answer stage uses a separate prep pipeline:
+
+```bash
+uv run python -m dataset.prepare_wiki_rag_answer_data
+uv run train.py sft --config configs/wiki_rag_answer.yaml
+```
+
+That path produces a second LoRA adapter focused on grounded answers with
+numbered citations.
+
 The reward function is entirely rule-based (no LLM judge) which makes it fast,
 deterministic, and suitable as an RL signal. See `SCORING.md` for the full rubric.
 
@@ -262,4 +292,3 @@ deterministic, and suitable as an RL signal. See `SCORING.md` for the full rubri
 
 > GRPO scores are not tracked in this branch; see `experiments/grpo/` for historical
 > experimental results.
-
