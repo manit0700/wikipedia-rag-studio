@@ -366,7 +366,7 @@ async function maybeGenerateAnswer(
   }
 }
 
-function buildCitedAnswerPrompt(question: string, citations: WikipediaCitation[]): string {
+function buildCitedAnswerUserPrompt(question: string, citations: WikipediaCitation[]): string {
   const sources = citations.length > 0
     ? citations
         .map((citation) => `[${citation.id}] ${citation.title} - ${citation.url}\nExcerpt: ${citation.excerpt}`)
@@ -374,34 +374,35 @@ function buildCitedAnswerPrompt(question: string, citations: WikipediaCitation[]
     : "None provided.";
 
   return [
-    "You are a concise Wikipedia RAG answer model.",
-    "Answer the user's question using only the provided source excerpts.",
-    "Do not list possible page meanings unless the user asks for disambiguation.",
-    "Do not copy source titles as the answer; synthesize a short factual answer.",
+    "/no_think Answer the question using only the provided sources.",
     "Cite every factual claim with bracketed citations like [1].",
-    "End with a Sources section listing only cited source titles and URLs.",
+    "End every answer with a Sources section listing only cited sources.",
     "If the sources do not support the answer, say so clearly.",
-    "Keep the answer to 3-6 sentences unless the user asks for more detail.",
-    "Output format:",
-    "Answer:",
-    "<short answer with citations>",
-    "",
-    "Sources:",
-    "[1] <title> - <url>",
     "",
     `Question: ${question}`,
     "",
-    "Evidence:",
+    "Sources:",
     sources,
   ].join("\n");
+}
+
+function buildCitedAnswerPrompt(question: string, citations: WikipediaCitation[]): string {
+  const userPrompt = buildCitedAnswerUserPrompt(question, citations);
+  return `<|im_start|>user\n${userPrompt}<|im_end|>\n<|im_start|>assistant\n`;
 }
 
 function cleanGeneratedAnswer(answer: string): string {
   const cleaned = answer
     .replace(/<think>[\s\S]*?<\/think>/g, "")
+    .replace(/<\|im_(?:start|end)\|>/g, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
   return cleaned.replace(/^Answer:\s*/i, "").trim();
+}
+
+function stripGeneratedSources(answer: string): string {
+  const idx = answer.search(/\n\s*Sources\s*:/i);
+  return idx >= 0 ? answer.slice(0, idx).trim() : answer.trim();
 }
 
 function isUsableGeneratedAnswer(answer: string, citationCount: number): boolean {
@@ -413,7 +414,12 @@ function isUsableGeneratedAnswer(answer: string, citationCount: number): boolean
     return false;
   }
 
-  const ids = Array.from(answer.matchAll(/\[(\d+)\]/g)).map((match) => Number(match[1]));
+  const answerBody = stripGeneratedSources(answer);
+  if (/expanded search query|search query options|here are some ways|broader search/i.test(answerBody)) {
+    return false;
+  }
+
+  const ids = Array.from(answerBody.matchAll(/\[(\d+)\]/g)).map((match) => Number(match[1]));
   return ids.length > 0 && ids.every((id) => Number.isInteger(id) && id >= 1 && id <= citationCount);
 }
 
@@ -442,11 +448,13 @@ async function generateWithOllama(question: string, citations: WikipediaCitation
         model,
         prompt,
         stream: false,
+        raw: true,
         options: {
           temperature: 0,
           top_p: 1,
           top_k: 0,
           num_predict: Number.isFinite(maxTokens) && maxTokens > 0 ? maxTokens : 140,
+          stop: ["<|im_end|>", "<|endoftext|>"],
         },
       }),
     });
@@ -460,7 +468,8 @@ async function generateWithOllama(question: string, citations: WikipediaCitation
     if (!isUsableGeneratedAnswer(answer, citations.length)) {
       return null;
     }
-    return answer ? { answer, provider: "ollama" } : null;
+    const body = stripGeneratedSources(answer);
+    return body ? { answer: body, provider: "ollama" } : null;
   } catch {
     return null;
   } finally {
