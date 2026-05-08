@@ -42,8 +42,9 @@ Useful tasks:
 
 The push task uploads `finetune/kaggle/wiki_rag_answer_training.py` using
 `finetune/kaggle/kernel-metadata.json`. The script then clones the latest code
-from `https://github.com/manit0700/qmd.git`, prepares data, trains, exports
-GGUF, and writes `/kaggle/working/wiki-rag-answer-q4.zip`.
+from `https://github.com/manit0700/qmd.git`, prepares SFT and preference data,
+trains SFT, runs DPO preference tuning, exports GGUF, and writes artifacts to
+`/kaggle/working`.
 
 Kaggle notebook URL:
 
@@ -81,6 +82,12 @@ The final downloadable artifact is:
 /kaggle/working/wiki-rag-answer-q4.zip
 ```
 
+After DPO runs, Kaggle also writes:
+
+```text
+/kaggle/working/wiki-rag-answer-dpo-q4.zip
+```
+
 That zip contains:
 
 ```text
@@ -93,11 +100,24 @@ Download it from the Kaggle notebook output panel, then put it on your Mac at:
 /Users/manitdankhara/qmd/finetune/outputs/wiki-rag-answer/gguf/wiki-rag-answer-q4_k_m.gguf
 ```
 
+For the DPO model, unzip to:
+
+```text
+/Users/manitdankhara/qmd/finetune/outputs/wiki-rag-answer-dpo/gguf/wiki-rag-answer-dpo-q4_k_m.gguf
+```
+
 Then recreate the Ollama model:
 
 ```bash
 cd /Users/manitdankhara/qmd/finetune
 ollama create wiki-rag-answer -f Modelfile.wiki-rag-answer
+```
+
+Or recreate the DPO model:
+
+```bash
+cd /Users/manitdankhara/qmd/finetune
+ollama create wiki-rag-answer-dpo -f Modelfile.wiki-rag-answer-dpo
 ```
 
 ## Mac / VS Code Loop

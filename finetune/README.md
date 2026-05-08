@@ -75,6 +75,24 @@ finetune/kaggle/wiki_rag_answer_training.py
 See `finetune/kaggle/README.md` for the full VS Code -> GitHub -> Kaggle ->
 Ollama loop.
 
+The Wikipedia RAG answer model now has two stages:
+
+```bash
+# Stage 1: SFT, learns the ideal cited-answer format
+uv run python -m dataset.prepare_wiki_rag_answer_data
+uv run train.py sft --config configs/wiki_rag_answer.yaml
+
+# Stage 2: DPO, learns to prefer grounded answers over bad/fake-citation answers
+uv run python -m dataset.prepare_wiki_rag_preference_data
+uv run train.py dpo --config configs/wiki_rag_answer_dpo.yaml
+```
+
+The DPO output can be loaded into Ollama with:
+
+```bash
+ollama create wiki-rag-answer-dpo -f Modelfile.wiki-rag-answer-dpo
+```
+
 ### Monitoring HF Jobs
 
 ```bash

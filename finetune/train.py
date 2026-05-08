@@ -424,6 +424,160 @@ def cmd_sft(args):
             pass
 
 
+def cmd_dpo(args):
+    """Run preference tuning on top of an SFT LoRA adapter."""
+    import torch
+    import torch.distributed as dist
+    from datasets import load_dataset
+    from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers.utils import logging as hf_logging
+
+    hf_logging.set_verbosity_error()
+    from trl import DPOConfig, DPOTrainer
+
+    with open(args.config) as f:
+        cfg = yaml.safe_load(f)
+
+    os.environ.setdefault("HF_LOG_CUDA_MEMORY", "0")
+
+    if args.dry_run:
+        print("DPO Training Configuration:")
+        print(yaml.dump(cfg, default_flow_style=False))
+        return
+
+    dataset_name = cfg["dataset"]["name"]
+    print(f"Loading preference dataset: {dataset_name}...")
+    data_path = Path(dataset_name)
+    if data_path.is_dir():
+        dataset = load_dataset(
+            "json",
+            data_files={
+                "train": str(data_path / "train.jsonl"),
+                "eval": str(data_path / "val.jsonl"),
+            },
+        )
+        train_dataset = dataset["train"]
+        eval_dataset = dataset["eval"]
+    else:
+        dataset = load_dataset("json", data_files=dataset_name, split="train")
+        split = dataset.train_test_split(
+            test_size=cfg["dataset"].get("eval_split", 0.15), seed=42
+        )
+        train_dataset = split["train"]
+        eval_dataset = split["test"]
+    print(f"Dataset loaded: Train: {len(train_dataset)}, Eval: {len(eval_dataset)}")
+
+    output_name = cfg["model"]["output"]
+    push_to_hub = "/" in output_name and not output_name.startswith("outputs/")
+    if "push_to_hub" in cfg["model"]:
+        push_to_hub = bool(cfg["model"]["push_to_hub"])
+    output_dir = output_name.split("/")[-1] if push_to_hub else output_name
+
+    report_to = "none"
+    tracking = cfg.get("tracking", {})
+    if os.environ.get("HF_TOKEN"):
+        try:
+            import trackio  # noqa: F401
+
+            report_to = "trackio"
+        except Exception:
+            print("Trackio not installed; disabling tracking.")
+    if report_to == "trackio" and tracking.get("project"):
+        os.environ.setdefault("TRACKIO_PROJECT", tracking["project"])
+
+    print("Loading tokenizer...")
+    base_model = cfg["model"]["base"]
+    tokenizer = AutoTokenizer.from_pretrained(base_model)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    dtype_name = cfg["model"].get("torch_dtype", "float16")
+    dtype_map = {
+        "bfloat16": torch.bfloat16,
+        "float16": torch.float16,
+        "float32": torch.float32,
+    }
+
+    print("Loading base model and SFT adapter...")
+    base = AutoModelForCausalLM.from_pretrained(
+        base_model,
+        torch_dtype=dtype_map.get(dtype_name, torch.float16),
+        device_map="auto",
+    )
+    model = PeftModel.from_pretrained(base, cfg["model"]["sft"], is_trainable=True)
+    model.print_trainable_parameters()
+
+    training = cfg["training"]
+    dpo = cfg.get("dpo", {})
+    dpo_config = DPOConfig(
+        output_dir=output_dir,
+        push_to_hub=push_to_hub,
+        hub_model_id=output_name if push_to_hub else None,
+        num_train_epochs=training["epochs"],
+        per_device_train_batch_size=training["batch_size"],
+        per_device_eval_batch_size=training.get("eval_batch_size", training["batch_size"]),
+        gradient_accumulation_steps=training["gradient_accumulation_steps"],
+        learning_rate=float(training["learning_rate"]),
+        max_length=training["max_length"],
+        max_prompt_length=training.get("max_prompt_length", 512),
+        optim=training.get("optim", "adamw_torch"),
+        warmup_ratio=training.get("warmup_ratio", 0.05),
+        lr_scheduler_type=training.get("lr_scheduler", "cosine"),
+        beta=dpo.get("beta", 0.1),
+        logging_steps=10,
+        save_strategy="steps",
+        save_steps=training.get("save_steps", 100),
+        save_total_limit=training.get("save_total_limit", 2),
+        eval_strategy="steps",
+        eval_steps=training.get("eval_steps", 100),
+        **precision_flags(training),
+        report_to=report_to,
+        run_name=tracking.get("run_name") if report_to == "trackio" else None,
+    )
+
+    print("Initializing DPO trainer...")
+    trainer = DPOTrainer(
+        model=model,
+        args=dpo_config,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        processing_class=tokenizer,
+    )
+
+    print("Starting DPO preference tuning...")
+    trainer.train()
+
+    is_main = os.environ.get("RANK", "0") == "0"
+    if dist.is_available() and dist.is_initialized():
+        dist.barrier()
+    if not is_main:
+        return
+
+    trainer.save_model()
+    print(f"Done! DPO adapter saved to: {output_dir}")
+
+    print("\nExporting DPO model to GGUF...")
+    export_base = AutoModelForCausalLM.from_pretrained(
+        base_model,
+        torch_dtype=torch.bfloat16,
+        device_map="auto",
+    )
+    export_base.config.tie_word_embeddings = False
+    merged = PeftModel.from_pretrained(export_base, output_dir, local_files_only=True)
+    merged = merged.merge_and_unload()
+    export_gguf(merged, tokenizer, output_dir, Path(output_dir).name)
+
+    eval_avg = run_eval(output_dir)
+    if report_to == "trackio" and eval_avg is not None:
+        try:
+            import trackio
+
+            trackio.log({"eval.avg": eval_avg})
+        except Exception:
+            pass
+
+
 def cmd_grpo(args):
     """Run GRPO reinforcement learning on top of merged SFT weights."""
     print(
@@ -666,6 +820,7 @@ def main():
         epilog="""
 Examples:
   uv run train.py sft  --config configs/sft.yaml
+  uv run train.py dpo  --config configs/wiki_rag_answer_dpo.yaml
         """,
     )
     sub = parser.add_subparsers(dest="stage", required=True)
@@ -676,9 +831,18 @@ Examples:
         "--dry-run", action="store_true", help="Print config and exit"
     )
 
+    dpo_parser = sub.add_parser("dpo", help="Preference tuning with DPO")
+    dpo_parser.add_argument("--config", required=True, help="Path to DPO config YAML")
+    dpo_parser.add_argument(
+        "--dry-run", action="store_true", help="Print config and exit"
+    )
+
     args = parser.parse_args()
 
-    cmd_sft(args)
+    if args.stage == "sft":
+        cmd_sft(args)
+    elif args.stage == "dpo":
+        cmd_dpo(args)
 
 if __name__ == "__main__":
     main()

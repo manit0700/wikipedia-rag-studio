@@ -1,0 +1,35 @@
+# DPO preference-tuning config for Wikipedia RAG cited-answer behavior.
+# Run after the SFT adapter exists at outputs/wiki-rag-answer.
+
+model:
+  base: "Qwen/Qwen3-1.7B"
+  sft: "outputs/wiki-rag-answer"
+  output: "outputs/wiki-rag-answer-dpo"
+  torch_dtype: "float16"
+
+dataset:
+  name: "data/wiki_rag_preference/"
+  eval_split: 0.15
+
+training:
+  precision: "fp16"
+  epochs: 1
+  batch_size: 1
+  eval_batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 5.0e-6
+  max_length: 768
+  max_prompt_length: 512
+  optim: "paged_adamw_8bit"
+  warmup_ratio: 0.05
+  lr_scheduler: "cosine"
+  save_steps: 100
+  eval_steps: 100
+  save_total_limit: 2
+
+dpo:
+  beta: 0.1
+
+tracking:
+  project: "qmd-wiki-rag-answer"
+  run_name: "dpo-wiki-rag-answer"

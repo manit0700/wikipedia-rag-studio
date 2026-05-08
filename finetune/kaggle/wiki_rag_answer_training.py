@@ -44,6 +44,7 @@ subprocess.run(
 
 # %%
 subprocess.run(["uv", "run", "python", "-m", "dataset.prepare_wiki_rag_answer_data"], check=True)
+subprocess.run(["uv", "run", "python", "-m", "dataset.prepare_wiki_rag_preference_data"], check=True)
 
 # %%
 # Optional lower-memory fallback for smaller GPUs. Uncomment if the training cell OOMs.
@@ -66,6 +67,19 @@ if train_result.returncode != 0 and gguf.exists():
     print("Training command returned non-zero after GGUF export; continuing with artifact packaging.")
 
 # %%
+dpo_result = subprocess.run(
+    ["uv", "run", "python", "train.py", "dpo", "--config", "configs/wiki_rag_answer_dpo.yaml"],
+    check=False,
+)
+
+dpo_gguf = finetune_dir / "outputs/wiki-rag-answer-dpo/gguf/wiki-rag-answer-dpo-q4_k_m.gguf"
+if dpo_result.returncode != 0 and not dpo_gguf.exists():
+    raise subprocess.CalledProcessError(dpo_result.returncode, dpo_result.args)
+
+if dpo_result.returncode != 0 and dpo_gguf.exists():
+    print("DPO command returned non-zero after GGUF export; continuing with artifact packaging.")
+
+# %%
 # The automatic eval in train.py may OOM after training/export. Run the focused evaluator after training.
 subprocess.run(
     [
@@ -85,6 +99,8 @@ subprocess.run(
 # %%
 if not gguf.exists():
     raise FileNotFoundError(f"Expected GGUF not found: {gguf}")
+if not dpo_gguf.exists():
+    raise FileNotFoundError(f"Expected DPO GGUF not found: {dpo_gguf}")
 
 zip_path = Path("/kaggle/working/wiki-rag-answer-q4.zip")
 if zip_path.exists():
@@ -93,5 +109,13 @@ if zip_path.exists():
 subprocess.run(["zip", "-j", str(zip_path), str(gguf)], check=True)
 print("Download artifact:", zip_path)
 print("Size:", zip_path.stat().st_size / (1024 * 1024), "MB")
+
+dpo_zip_path = Path("/kaggle/working/wiki-rag-answer-dpo-q4.zip")
+if dpo_zip_path.exists():
+    dpo_zip_path.unlink()
+
+subprocess.run(["zip", "-j", str(dpo_zip_path), str(dpo_gguf)], check=True)
+print("Download DPO artifact:", dpo_zip_path)
+print("DPO size:", dpo_zip_path.stat().st_size / (1024 * 1024), "MB")
 
 shutil.rmtree(repo_dir, ignore_errors=True)

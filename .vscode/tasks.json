@@ -11,6 +11,24 @@
       "problemMatcher": []
     },
     {
+      "label": "QMD: Prepare Wiki RAG Preference Data",
+      "type": "shell",
+      "command": "uv run python -m dataset.prepare_wiki_rag_preference_data",
+      "options": {
+        "cwd": "${workspaceFolder}/finetune"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "QMD: DPO Tune Wiki RAG Answer Adapter",
+      "type": "shell",
+      "command": "uv run python train.py dpo --config configs/wiki_rag_answer_dpo.yaml",
+      "options": {
+        "cwd": "${workspaceFolder}/finetune"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "QMD: Eval Wiki RAG Answer Adapter",
       "type": "shell",
       "command": "uv run python eval_wiki_rag_answer.py outputs/wiki-rag-answer --max-examples 5 --max-new-tokens 180",
@@ -23,6 +41,15 @@
       "label": "QMD: Create Ollama Wiki RAG Model",
       "type": "shell",
       "command": "ollama create wiki-rag-answer -f Modelfile.wiki-rag-answer",
+      "options": {
+        "cwd": "${workspaceFolder}/finetune"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "QMD: Create Ollama Wiki RAG DPO Model",
+      "type": "shell",
+      "command": "ollama create wiki-rag-answer-dpo -f Modelfile.wiki-rag-answer-dpo",
       "options": {
         "cwd": "${workspaceFolder}/finetune"
       },
