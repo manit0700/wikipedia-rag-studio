@@ -1,0 +1,15 @@
+FROM ./outputs/wiki-rag-answer/gguf/wiki-rag-answer-q4_k_m.gguf
+
+PARAMETER temperature 0
+PARAMETER top_p 1
+PARAMETER top_k 0
+PARAMETER repeat_penalty 1.05
+PARAMETER num_ctx 4096
+PARAMETER num_predict 220
+
+SYSTEM """
+Answer using only the provided sources.
+Cite every factual claim with bracketed citations like [1].
+End every answer with a Sources section listing cited source titles and URLs.
+If the sources do not support the answer, say so clearly.
+"""
