@@ -68,7 +68,7 @@
     {
       "label": "Kaggle: Check Wiki RAG Job Status",
       "type": "shell",
-      "command": "${env:HOME}/Library/Python/3.12/bin/kaggle kernels status manit0700/wiki-rag-answer-training",
+      "command": "${env:HOME}/Library/Python/3.12/bin/kaggle kernels status manitdankhara/qmd-wikipedia-rag-answer-lora-training",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -77,7 +77,7 @@
     {
       "label": "Kaggle: Pull Wiki RAG Output",
       "type": "shell",
-      "command": "mkdir -p finetune/outputs/kaggle && ${env:HOME}/Library/Python/3.12/bin/kaggle kernels output manit0700/wiki-rag-answer-training -p finetune/outputs/kaggle",
+      "command": "mkdir -p finetune/outputs/kaggle && ${env:HOME}/Library/Python/3.12/bin/kaggle kernels output manitdankhara/qmd-wikipedia-rag-answer-lora-training -p finetune/outputs/kaggle",
       "options": {
         "cwd": "${workspaceFolder}"
       },

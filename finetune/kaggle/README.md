@@ -45,6 +45,12 @@ The push task uploads `finetune/kaggle/wiki_rag_answer_training.py` using
 from `https://github.com/manit0700/qmd.git`, prepares data, trains, exports
 GGUF, and writes `/kaggle/working/wiki-rag-answer-q4.zip`.
 
+Kaggle notebook URL:
+
+```text
+https://www.kaggle.com/code/manitdankhara/qmd-wikipedia-rag-answer-lora-training
+```
+
 ## Kaggle Setup
 
 1. Open `https://www.kaggle.com/code`.
