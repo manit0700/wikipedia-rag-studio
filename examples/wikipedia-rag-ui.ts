@@ -9,6 +9,7 @@ import {
   buildWikipediaCorpus,
   resolveWikipediaRagPaths,
   runWikipediaRagDemo,
+  type WikipediaCitation,
 } from "../src/wikipedia-rag.js";
 
 type UiStatus = {
@@ -56,7 +57,22 @@ type AnswerQuality = {
   validCitations: boolean;
   hasSources: boolean;
   directAnswer: boolean;
+  noFakeSources: boolean;
+  addressesQuestion: boolean;
   citationCount: number;
+  citedIds: number[];
+  invalidCitationIds: number[];
+  sourceChecks: SourceCheck[];
+  issues: string[];
+};
+
+type SourceCheck = {
+  id: number;
+  title: string;
+  url: string;
+  cited: boolean;
+  urlListed: boolean;
+  excerptUsed: boolean;
 };
 
 const MODEL_OPTIONS = [
@@ -238,19 +254,107 @@ async function runDemoWithModel(
   }
 }
 
-function scoreAnswer(answer: string, citationCount: number): AnswerQuality {
+function significantTerms(value: string): string[] {
+  const stop = new Set([
+    "about",
+    "after",
+    "also",
+    "and",
+    "are",
+    "because",
+    "before",
+    "company",
+    "does",
+    "for",
+    "from",
+    "have",
+    "how",
+    "important",
+    "into",
+    "its",
+    "more",
+    "tell",
+    "that",
+    "the",
+    "their",
+    "thing",
+    "things",
+    "this",
+    "was",
+    "what",
+    "when",
+    "where",
+    "who",
+    "why",
+    "with",
+  ]);
+
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((term) => term.length > 2 && !stop.has(term));
+}
+
+function extractUrls(value: string): string[] {
+  return Array.from(value.matchAll(/https?:\/\/[^\s)]+/g)).map((match) => match[0]);
+}
+
+function scoreAnswer(question: string, answer: string, citations: WikipediaCitation[]): AnswerQuality {
+  const citationCount = citations.length;
   const ids = Array.from(answer.matchAll(/\[(\d+)\]/g)).map((match) => Number(match[1]));
-  const validCitations = ids.length > 0 && ids.every((id) => id >= 1 && id <= citationCount);
-  const hasSources = /\n\nSources\b|\bSources\n/.test(answer);
-  const directAnswer = !/expanded search query|search query options|break it down|not a standard/i.test(answer);
-  const score = [validCitations, hasSources, directAnswer].filter(Boolean).length * 30 + Math.min(citationCount, 2) * 5;
+  const citedIds = Array.from(new Set(ids));
+  const invalidCitationIds = citedIds.filter((id) => id < 1 || id > citationCount);
+  const validCitations = citedIds.length > 0 && invalidCitationIds.length === 0;
+  const hasSources = /\n\nSources\b|\bSources\n|^Sources\b/m.test(answer);
+  const directAnswer = !/expanded search query|search query options|break it down|not a standard|here are some ways/i.test(answer);
+  const sourceUrls = new Set(citations.map((citation) => citation.url));
+  const unknownUrls = extractUrls(answer).filter((url) => !Array.from(sourceUrls).some((sourceUrl) => url === sourceUrl || url.startsWith(sourceUrl)));
+  const noFakeSources = unknownUrls.length === 0;
+  const questionTerms = significantTerms(question);
+  const lowerAnswer = answer.toLowerCase();
+  const addressesQuestion = questionTerms.length === 0 || questionTerms.some((term) => lowerAnswer.includes(term));
+  const sourceChecks = citations.map((citation) => {
+    const titleTerms = significantTerms(citation.title);
+    const excerptTerms = significantTerms(citation.excerpt).slice(0, 8);
+    return {
+      id: citation.id,
+      title: citation.title,
+      url: citation.url,
+      cited: citedIds.includes(citation.id),
+      urlListed: lowerAnswer.includes(citation.url.toLowerCase()),
+      excerptUsed: [...titleTerms, ...excerptTerms].some((term) => lowerAnswer.includes(term)),
+    };
+  });
+  const listedOrCitedSource = sourceChecks.some((source) => source.cited && (source.urlListed || source.excerptUsed));
+  const issues = [
+    !validCitations ? `Citation IDs missing or invalid${invalidCitationIds.length > 0 ? `: ${invalidCitationIds.join(", ")}` : ""}` : "",
+    !hasSources ? "Missing Sources section" : "",
+    !directAnswer ? "Looks like search-query expansion instead of an answer" : "",
+    !noFakeSources ? "Contains URL(s) not returned by retrieval" : "",
+    !addressesQuestion ? "Does not clearly address the question terms" : "",
+    !listedOrCitedSource ? "Cited sources are not clearly reflected in the answer" : "",
+  ].filter(Boolean);
+  const score =
+    (validCitations ? 25 : 0) +
+    (hasSources ? 20 : 0) +
+    (directAnswer ? 20 : 0) +
+    (noFakeSources ? 15 : 0) +
+    (addressesQuestion ? 10 : 0) +
+    (listedOrCitedSource ? 10 : 0);
 
   return {
     score: Math.min(100, score),
     validCitations,
     hasSources,
     directAnswer,
+    noFakeSources,
+    addressesQuestion,
     citationCount,
+    citedIds,
+    invalidCitationIds,
+    sourceChecks,
+    issues,
   };
 }
 
@@ -265,7 +369,7 @@ async function compareModels(question: string): Promise<ComparisonResult> {
       answerProvider: result.answerProvider,
       body: split.body,
       citations: result.citations,
-      quality: scoreAnswer(result.answer, result.citations.length),
+      quality: scoreAnswer(question, result.answer, result.citations),
     });
   }
 
@@ -617,7 +721,7 @@ function renderPage(): string {
       }
       .checks {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 8px;
       }
       .check {
@@ -629,12 +733,70 @@ function renderPage(): string {
         font-weight: 750;
       }
       .check.ok { color: var(--accent); background: var(--accent-soft); }
+      .check.warn { color: var(--warn); background: var(--warn-soft); }
       .model-answer {
         white-space: pre-wrap;
         line-height: 1.5;
         color: var(--text);
         border-top: 1px solid var(--border);
         padding-top: 12px;
+      }
+      .issue-list {
+        display: grid;
+        gap: 6px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .issue-list li {
+        border: 1px solid rgba(154, 52, 18, 0.16);
+        background: var(--warn-soft);
+        color: var(--warn);
+        border-radius: 12px;
+        padding: 8px 10px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .source-audit {
+        display: grid;
+        gap: 8px;
+      }
+      .source-row {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.62);
+        padding: 10px;
+        display: grid;
+        gap: 8px;
+      }
+      .source-row-title {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        min-width: 0;
+      }
+      .source-row-title strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .audit-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .audit-tag {
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        padding: 4px 8px;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .audit-tag.ok {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-color: rgba(102, 140, 255, 0.28);
       }
       .list {
         display: grid;
@@ -750,8 +912,33 @@ function renderPage(): string {
                       <div class="check ${model.quality.validCitations ? "ok" : ""}">Valid citations</div>
                       <div class="check ${model.quality.hasSources ? "ok" : ""}">Sources section</div>
                       <div class="check ${model.quality.directAnswer ? "ok" : ""}">Direct answer</div>
+                      <div class="check ${model.quality.noFakeSources ? "ok" : "warn"}">No fake URLs</div>
+                      <div class="check ${model.quality.addressesQuestion ? "ok" : "warn"}">Question match</div>
                     </div>
+                    ${model.quality.issues.length > 0 ? `
+                      <ul class="issue-list">
+                        ${model.quality.issues.map((issue) => `<li>${escapeHtml(issue)}</li>`).join("")}
+                      </ul>
+                    ` : `<div class="chip strong">No quality issues detected</div>`}
                     <div class="model-answer">${escapeHtml(model.body)}</div>
+                    <div>
+                      <div class="eyebrow" style="margin-bottom:8px">Source audit</div>
+                      <div class="source-audit">
+                        ${model.quality.sourceChecks.map((source) => `
+                          <div class="source-row">
+                            <div class="source-row-title">
+                              <span class="source-id">${source.id}</span>
+                              <strong>${escapeHtml(source.title)}</strong>
+                            </div>
+                            <div class="audit-tags">
+                              <span class="audit-tag ${source.cited ? "ok" : ""}">${source.cited ? "Cited" : "Not cited"}</span>
+                              <span class="audit-tag ${source.urlListed ? "ok" : ""}">${source.urlListed ? "URL listed" : "URL missing"}</span>
+                              <span class="audit-tag ${source.excerptUsed ? "ok" : ""}">${source.excerptUsed ? "Evidence used" : "Evidence weak"}</span>
+                            </div>
+                          </div>
+                        `).join("")}
+                      </div>
+                    </div>
                   </div>
                 `).join("")}
               </div>
