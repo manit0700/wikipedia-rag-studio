@@ -3,6 +3,48 @@
 Use this when Colab download/runtime behavior is unreliable. Kaggle runs the GPU
 training; VS Code remains the place where you edit data and push changes.
 
+## VS Code / Cursor Integration
+
+Kaggle can be controlled from the VS Code terminal with the Kaggle CLI. It does
+not make `/kaggle/working` available on your Mac; it uploads a Kaggle notebook
+script and Kaggle runs that script on Kaggle's GPU machines.
+
+### One-time API setup
+
+1. Go to `https://www.kaggle.com/settings/account`.
+2. Create a Kaggle API token. This downloads `kaggle.json`.
+3. Put it on your Mac:
+
+```bash
+mkdir -p ~/.kaggle
+mv ~/Downloads/kaggle.json ~/.kaggle/kaggle.json
+chmod 600 ~/.kaggle/kaggle.json
+pip install kaggle
+~/Library/Python/3.12/bin/kaggle kernels list --mine --page-size 1
+```
+
+If the final command lists your notebooks, VS Code is connected to Kaggle.
+
+### VS Code tasks
+
+Run tasks with:
+
+```text
+Command Palette -> Tasks: Run Task
+```
+
+Useful tasks:
+
+- `Kaggle: Check CLI Auth`
+- `Kaggle: Push Wiki RAG Training Job`
+- `Kaggle: Check Wiki RAG Job Status`
+- `Kaggle: Pull Wiki RAG Output`
+
+The push task uploads `finetune/kaggle/wiki_rag_answer_training.py` using
+`finetune/kaggle/kernel-metadata.json`. The script then clones the latest code
+from `https://github.com/manit0700/qmd.git`, prepares data, trains, exports
+GGUF, and writes `/kaggle/working/wiki-rag-answer-q4.zip`.
+
 ## Kaggle Setup
 
 1. Open `https://www.kaggle.com/code`.

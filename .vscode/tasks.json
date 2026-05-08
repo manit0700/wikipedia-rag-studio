@@ -46,6 +46,42 @@
         "cwd": "${workspaceFolder}"
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Kaggle: Check CLI Auth",
+      "type": "shell",
+      "command": "${env:HOME}/Library/Python/3.12/bin/kaggle kernels list --mine --page-size 1",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Kaggle: Push Wiki RAG Training Job",
+      "type": "shell",
+      "command": "${env:HOME}/Library/Python/3.12/bin/kaggle kernels push -p finetune/kaggle",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Kaggle: Check Wiki RAG Job Status",
+      "type": "shell",
+      "command": "${env:HOME}/Library/Python/3.12/bin/kaggle kernels status manit0700/wiki-rag-answer-training",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Kaggle: Pull Wiki RAG Output",
+      "type": "shell",
+      "command": "mkdir -p finetune/outputs/kaggle && ${env:HOME}/Library/Python/3.12/bin/kaggle kernels output manit0700/wiki-rag-answer-training -p finetune/outputs/kaggle",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
     }
   ]
 }

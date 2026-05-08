@@ -1,0 +1,19 @@
+{
+  "id": "manit0700/wiki-rag-answer-training",
+  "title": "QMD Wikipedia RAG Answer LoRA Training",
+  "code_file": "wiki_rag_answer_training.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "keywords": [
+    "rag",
+    "lora",
+    "qwen",
+    "gguf"
+  ]
+}
