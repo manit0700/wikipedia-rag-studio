@@ -48,6 +48,7 @@ export type AskResult = {
   question: string;
   answer: string;
   citations: WikipediaCitation[];
+  answerProvider: "ollama" | "qmd-llm" | "fallback";
 };
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -252,7 +253,7 @@ async function maybeGenerateAnswer(
   question: string,
   citations: WikipediaCitation[],
   store: Awaited<ReturnType<typeof openStore>>
-): Promise<string | null> {
+): Promise<{ answer: string; provider: "qmd-llm" } | null> {
   if (process.env.QMD_WIKI_RAG_USE_LLM !== "1") {
     return null;
   }
@@ -282,9 +283,85 @@ async function maybeGenerateAnswer(
 
   try {
     const result = await llm.generate(prompt, { maxTokens: 500, temperature: 0.2 });
-    return result?.text?.trim() || null;
+    const answer = result?.text?.trim();
+    return answer ? { answer, provider: "qmd-llm" } : null;
   } catch {
     return null;
+  }
+}
+
+function buildCitedAnswerPrompt(question: string, citations: WikipediaCitation[]): string {
+  const sources = citations.length > 0
+    ? citations
+        .map((citation) => `[${citation.id}] ${citation.title} - ${citation.url}\nExcerpt: ${citation.excerpt}`)
+        .join("\n")
+    : "None provided.";
+
+  return [
+    "Answer the question using only the provided sources.",
+    "Cite every factual claim with bracketed citations like [1].",
+    "End with a Sources section listing the cited source titles and URLs.",
+    "If the sources do not support the answer, say so clearly.",
+    "",
+    `Question: ${question}`,
+    "",
+    "Sources:",
+    sources,
+  ].join("\n");
+}
+
+function cleanGeneratedAnswer(answer: string): string {
+  return answer
+    .replace(/<think>[\s\S]*?<\/think>/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+async function generateWithOllama(question: string, citations: WikipediaCitation[]): Promise<{ answer: string; provider: "ollama" } | null> {
+  if ((process.env.QMD_WIKI_RAG_PROVIDER ?? "").toLowerCase() !== "ollama") {
+    return null;
+  }
+
+  const configuredEndpoint = process.env.OLLAMA_HOST ?? "http://127.0.0.1:11434";
+  const endpoint = /^https?:\/\//.test(configuredEndpoint)
+    ? configuredEndpoint
+    : `http://${configuredEndpoint}`;
+  const model = process.env.QMD_WIKI_RAG_OLLAMA_MODEL ?? "wiki-rag-answer";
+  const timeoutMs = Number.parseInt(process.env.QMD_WIKI_RAG_OLLAMA_TIMEOUT_MS ?? "25000", 10);
+  const maxTokens = Number.parseInt(process.env.QMD_WIKI_RAG_MAX_TOKENS ?? "140", 10);
+  const prompt = buildCitedAnswerPrompt(question, citations);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 25000);
+
+  try {
+    const response = await fetch(new URL("/api/generate", endpoint), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model,
+        prompt,
+        stream: false,
+        options: {
+          temperature: 0,
+          top_p: 1,
+          top_k: 0,
+          num_predict: Number.isFinite(maxTokens) && maxTokens > 0 ? maxTokens : 140,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const payload = await response.json() as { response?: string };
+    const answer = cleanGeneratedAnswer(payload.response ?? "");
+    return answer ? { answer, provider: "ollama" } : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -396,13 +473,16 @@ export async function answerWikipediaQuestion(
               };
             })
           );
-    const llmAnswer = await maybeGenerateAnswer(question, citations, store);
-    const answer = llmAnswer || fallbackAnswer(question, citations);
+    const generated =
+      await generateWithOllama(question, citations) ??
+      await maybeGenerateAnswer(question, citations, store);
+    const answer = generated?.answer || fallbackAnswer(question, citations);
 
     return {
       question,
       answer: `${answer}\n\n${renderSources(citations)}`.trim(),
       citations,
+      answerProvider: generated?.provider ?? "fallback",
     };
   } finally {
     await store.close();

@@ -34,6 +34,7 @@
     "wiki-rag:ingest": "tsx examples/wikipedia-rag.ts ingest",
     "wiki-rag:ask": "tsx examples/wikipedia-rag.ts ask",
     "wiki-rag:ui": "tsx examples/wikipedia-rag-ui.ts",
+    "wiki-rag:ui:ollama": "QMD_WIKI_RAG_PROVIDER=ollama QMD_WIKI_RAG_OLLAMA_MODEL=wiki-rag-answer tsx examples/wikipedia-rag-ui.ts",
     "inspector": "npx @modelcontextprotocol/inspector tsx src/cli/qmd.ts mcp",
     "release": "./scripts/release.sh"
   },

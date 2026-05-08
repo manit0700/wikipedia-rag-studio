@@ -154,6 +154,8 @@ function renderPage(): string {
   const citations = state.lastResult?.citations ?? [];
   const recent = status.recentHistory;
   const hasCorpus = status.documentCount > 0;
+  const answerProvider = state.lastResult?.answerProvider ?? "none";
+  const ollamaEnabled = process.env.QMD_WIKI_RAG_PROVIDER === "ollama";
 
   return `<!doctype html>
 <html lang="en">
@@ -233,6 +235,34 @@ function renderPage(): string {
         font-weight: 700;
         white-space: nowrap;
       }
+      .hero-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 10px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--panel-strong);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 750;
+      }
+      .chip.strong {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
       .dot {
         width: 10px;
         height: 10px;
@@ -257,10 +287,18 @@ function renderPage(): string {
         box-shadow: var(--shadow);
         padding: 18px;
       }
+      .panel-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
       .panel h2 {
         margin: 0 0 10px;
         font-size: 18px;
       }
+      .panel-header h2 { margin: 0; }
       .sub {
         color: var(--muted);
         margin: 0 0 16px;
@@ -307,6 +345,7 @@ function renderPage(): string {
       button.primary { background: #14532d; color: white; }
       button.secondary { background: #e5e7eb; color: #111827; }
       button.ghost { background: transparent; color: #111827; border: 1px solid var(--border); }
+      button:hover:not(:disabled) { transform: translateY(-1px); }
       button:disabled { opacity: 0.5; cursor: not-allowed; }
       .metrics {
         display: grid;
@@ -322,6 +361,7 @@ function renderPage(): string {
       }
       .metric .k { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
       .metric .v { font-size: 22px; font-weight: 800; margin-top: 8px; }
+      .metric .v.small { font-size: 15px; line-height: 1.25; word-break: break-word; }
       .answer {
         white-space: pre-wrap;
         line-height: 1.55;
@@ -329,6 +369,7 @@ function renderPage(): string {
         border: 1px solid var(--border);
         border-radius: 16px;
         padding: 16px;
+        min-height: 180px;
       }
       .sources {
         display: grid;
@@ -339,6 +380,24 @@ function renderPage(): string {
         border: 1px solid var(--border);
         border-radius: 16px;
         padding: 14px;
+        display: grid;
+        gap: 8px;
+      }
+      .source-title {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .source-id {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-weight: 800;
       }
       .source a {
         color: #14532d;
@@ -392,6 +451,7 @@ function renderPage(): string {
       @media (max-width: 1000px) {
         .grid, .columns, .metrics, .row { grid-template-columns: 1fr; }
         .hero { flex-direction: column; }
+        .hero-actions { align-items: flex-start; }
       }
     </style>
   </head>
@@ -402,8 +462,15 @@ function renderPage(): string {
           <div class="eyebrow">QMD · Wikipedia RAG</div>
           <h1>Wikipedia RAG Studio</h1>
           <p class="lede">Build a topic corpus, ask grounded questions, and get numbered citations back from the retrieved Wikipedia pages.</p>
+          <div class="chips">
+            <span class="chip ${ollamaEnabled ? "strong" : ""}">Ollama ${ollamaEnabled ? "enabled" : "off"}</span>
+            <span class="chip">Answer ${escapeHtml(answerProvider)}</span>
+            <span class="chip">Local QMD index</span>
+          </div>
         </div>
-        <div class="status-pill"><span class="dot"></span>${state.busy ? "Working" : hasCorpus ? "Corpus ready" : "Idle"}</div>
+        <div class="hero-actions">
+          <div class="status-pill"><span class="dot"></span>${state.busy ? "Working" : hasCorpus ? "Corpus ready" : "Idle"}</div>
+        </div>
       </section>
 
       <div class="grid">
@@ -439,16 +506,21 @@ function renderPage(): string {
           <div class="metrics">
             <div class="metric"><div class="k">Documents</div><div class="v">${status.documentCount}</div></div>
             <div class="metric"><div class="k">Manifest items</div><div class="v">${status.manifestCount}</div></div>
-            <div class="metric"><div class="k">Status</div><div class="v">${state.busy ? "Busy" : hasCorpus ? "Ready" : "Empty"}</div></div>
-            <div class="metric"><div class="k">DB</div><div class="v">Local</div></div>
+            <div class="metric"><div class="k">Answer</div><div class="v small">${escapeHtml(answerProvider)}</div></div>
+            <div class="metric"><div class="k">Provider</div><div class="v small">${ollamaEnabled ? "Ollama" : "Fallback"}</div></div>
           </div>
           <div class="footer-note">Corpus path: <code>${escapeHtml(status.corpusDir)}</code></div>
         </section>
 
         <section class="stack">
           <section class="panel">
-            <h2>Answer</h2>
-            <p class="sub">The model answer is grounded in the retrieved pages.</p>
+            <div class="panel-header">
+              <div>
+                <h2>Answer</h2>
+                <p class="sub">The model answer is grounded in the retrieved pages.</p>
+              </div>
+              <span class="chip ${answerProvider === "ollama" ? "strong" : ""}">${escapeHtml(answerProvider)}</span>
+            </div>
             <div class="answer">${escapeHtml(last.body || state.lastAnswer || "No answer yet. Build a corpus and ask a question.")}</div>
           </section>
 
@@ -458,7 +530,7 @@ function renderPage(): string {
             <div class="sources">
               ${citations.length > 0 ? citations.map((citation) => `
                 <div class="source">
-                  <strong>[${citation.id}] ${escapeHtml(citation.title)}</strong>
+                  <div class="source-title"><span class="source-id">${citation.id}</span><strong>${escapeHtml(citation.title)}</strong></div>
                   <div><a href="${escapeHtml(citation.url)}" target="_blank" rel="noreferrer">${escapeHtml(citation.url)}</a></div>
                   <small>${escapeHtml(citation.excerpt)}</small>
                 </div>
@@ -663,12 +735,13 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       const result = await answerWikipediaQuestion(question);
       state.lastResult = result;
       state.lastAnswer = result.answer;
-      addHistory("ask", `Answered: ${question}`, `${result.citations.length} citations returned.`);
+      addHistory("ask", `Answered: ${question}`, `${result.citations.length} citations returned via ${result.answerProvider}.`);
       json(res, 200, {
         ok: true,
         question,
         answer: result.answer,
         citations: result.citations,
+        answerProvider: result.answerProvider,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -711,13 +784,14 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       const result = await runWikipediaRagDemo(topic, question, { maxPages: pages });
       state.lastResult = result;
       state.lastAnswer = result.answer;
-      addHistory("demo", `Built and answered ${topic}`, `${result.citations.length} citations returned.`);
+      addHistory("demo", `Built and answered ${topic}`, `${result.citations.length} citations returned via ${result.answerProvider}.`);
       json(res, 200, {
         ok: true,
         topic,
         question,
         answer: result.answer,
         citations: result.citations,
+        answerProvider: result.answerProvider,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
