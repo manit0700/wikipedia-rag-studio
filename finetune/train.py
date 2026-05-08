@@ -520,7 +520,6 @@ def cmd_dpo(args):
         gradient_accumulation_steps=training["gradient_accumulation_steps"],
         learning_rate=float(training["learning_rate"]),
         max_length=training["max_length"],
-        max_prompt_length=training.get("max_prompt_length", 512),
         optim=training.get("optim", "adamw_torch"),
         warmup_ratio=training.get("warmup_ratio", 0.05),
         lr_scheduler_type=training.get("lr_scheduler", "cosine"),
