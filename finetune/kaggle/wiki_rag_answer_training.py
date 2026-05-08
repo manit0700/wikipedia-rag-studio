@@ -17,6 +17,8 @@ import torch
 
 print("CUDA:", torch.cuda.is_available())
 print("GPU:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "NO GPU")
+if torch.cuda.is_available() and "P100" in torch.cuda.get_device_name(0):
+    raise RuntimeError("Kaggle P100 is not compatible with the current Torch CUDA build. Use GPU T4 x2.")
 
 # %%
 repo_dir = Path("/tmp/qmd")
@@ -34,7 +36,7 @@ subprocess.run(["pip", "install", "-q", "uv"], check=True)
 subprocess.run(["uv", "sync"], check=True)
 
 # Install bitsandbytes inside the uv-managed venv. This is required for paged_adamw_8bit.
-subprocess.run(["uv", "pip", "install", "bitsandbytes"], check=True)
+subprocess.run(["uv", "pip", "install", "--python", ".venv/bin/python", "bitsandbytes", "wrapt"], check=True)
 subprocess.run(
     ["uv", "run", "python", "-c", "import bitsandbytes as bnb; print('bitsandbytes OK')"],
     check=True,

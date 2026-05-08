@@ -56,7 +56,7 @@ https://www.kaggle.com/code/manitdankhara/qmd-wikipedia-rag-answer-lora-training
 1. Open `https://www.kaggle.com/code`.
 2. Create a new notebook.
 3. In notebook settings, enable:
-   - Accelerator: `GPU T4 x2` or `GPU P100`
+   - Accelerator: `GPU T4 x2`
    - Internet: `On`
 4. Upload or paste the cells from `wiki_rag_answer_training.py`.
 5. Run top to bottom.
@@ -118,3 +118,8 @@ config_text = config_text.replace("max_length: 768", "max_length: 512")
 ```
 
 Then rerun training.
+
+## If P100 Fails
+
+Do not use `GPU P100` for this notebook. Kaggle's current PyTorch build may not
+support the P100 CUDA capability. Use `GPU T4 x2`.
