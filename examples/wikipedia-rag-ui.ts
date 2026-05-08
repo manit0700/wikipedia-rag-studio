@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -23,7 +23,7 @@ type UiStatus = {
 
 type UiEvent = {
   at: string;
-  kind: "ingest" | "ask" | "demo" | "error";
+  kind: "ingest" | "ask" | "demo" | "clear" | "error";
   title: string;
   detail: string;
 };
@@ -300,6 +300,43 @@ function extractUrls(value: string): string[] {
   return Array.from(value.matchAll(/https?:\/\/[^\s)]+/g)).map((match) => match[0]);
 }
 
+function corpusMismatchWarning(question: string): string | null {
+  const queryTerms = significantTerms(question);
+  if (queryTerms.length === 0) {
+    return null;
+  }
+
+  const manifest = readManifestSummary();
+  if (!manifest.topic || manifest.documents.length === 0) {
+    return null;
+  }
+
+  const corpusTerms = new Set([
+    ...significantTerms(manifest.topic),
+    ...manifest.documents.flatMap((doc) => significantTerms(doc.title)),
+  ]);
+  const overlap = queryTerms.some((term) => corpusTerms.has(term));
+  if (overlap) {
+    return null;
+  }
+
+  return `Current corpus is "${manifest.topic}", but this question looks unrelated. Build a new corpus for the question topic or continue anyway.`;
+}
+
+function clearCorpus(): void {
+  const p = paths();
+  rmSync(p.corpusDir, { recursive: true, force: true });
+  rmSync(p.dbPath, { force: true });
+  rmSync(p.manifestPath, { force: true });
+  ensureDir(p.corpusDir);
+  state.currentTopic = null;
+  state.currentQuestion = null;
+  state.lastAnswer = null;
+  state.lastError = null;
+  state.lastResult = null;
+  state.lastComparison = null;
+}
+
 function scoreAnswer(question: string, answer: string, citations: WikipediaCitation[]): AnswerQuality {
   const citationCount = citations.length;
   const ids = Array.from(answer.matchAll(/\[(\d+)\]/g)).map((match) => Number(match[1]));
@@ -386,6 +423,7 @@ function renderPage(): string {
   const ollamaEnabled = process.env.QMD_WIKI_RAG_PROVIDER === "ollama";
   const comparison = state.lastComparison;
   const selectedModel = normalizeModel(state.selectedModel);
+  const mismatchWarning = state.currentQuestion ? corpusMismatchWarning(state.currentQuestion) : null;
 
   return `<!doctype html>
 <html lang="en">
@@ -687,6 +725,17 @@ function renderPage(): string {
       }
       .badge.ok { background: var(--accent-soft); color: var(--accent); }
       .badge.warn { background: var(--warn-soft); color: var(--warn); }
+      .notice {
+        border: 1px solid rgba(154, 52, 18, 0.18);
+        background: var(--warn-soft);
+        color: var(--warn);
+        border-radius: 16px;
+        padding: 12px 14px;
+        margin-top: 12px;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.4;
+      }
       .columns {
         display: grid;
         grid-template-columns: 1.4fr 0.9fr;
@@ -866,12 +915,14 @@ function renderPage(): string {
             <label for="question">Question</label>
             <textarea id="question" name="question" placeholder="Why is Ada Lovelace important?">${escapeHtml(state.currentQuestion ?? "")}</textarea>
           </div>
+          ${mismatchWarning ? `<div class="notice">${escapeHtml(mismatchWarning)}</div>` : ""}
 
           <div class="buttons">
             <button class="primary" id="demoBtn"${state.busy ? " disabled" : ""}>Build and ask</button>
             <button class="secondary" id="ingestBtn"${state.busy ? " disabled" : ""}>Build corpus</button>
             <button class="ghost" id="askBtn"${state.busy ? " disabled" : ""}>Ask only</button>
             <button class="ghost" id="compareBtn"${state.busy ? " disabled" : ""}>Compare models</button>
+            <button class="ghost" id="clearBtn"${state.busy || !hasCorpus ? " disabled" : ""}>Clear corpus</button>
             <button class="ghost" id="refreshBtn">Refresh</button>
           </div>
 
@@ -1009,21 +1060,29 @@ function renderPage(): string {
       const ingestBtn = document.getElementById("ingestBtn");
       const askBtn = document.getElementById("askBtn");
       const compareBtn = document.getElementById("compareBtn");
+      const clearBtn = document.getElementById("clearBtn");
       const refreshBtn = document.getElementById("refreshBtn");
 
-      async function post(path, payload) {
+      async function post(path, payload, allowMismatchRetry = true) {
         const response = await fetch(path, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify(payload),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data?.error || "Request failed");
+        if (!response.ok) {
+          if (allowMismatchRetry && data?.mismatch && confirm(data.error + "\\n\\nContinue with the current corpus anyway?")) {
+            return post(path, { ...payload, allowMismatch: true }, false);
+          }
+          throw new Error(data?.error || "Request failed");
+        }
         return data;
       }
 
       function lockButtons(locked) {
-        [demoBtn, ingestBtn, askBtn, compareBtn].forEach((btn) => btn.disabled = locked);
+        [demoBtn, ingestBtn, askBtn, compareBtn, clearBtn].forEach((btn) => {
+          if (btn) btn.disabled = locked;
+        });
       }
 
       demoBtn?.addEventListener("click", async () => {
@@ -1074,6 +1133,19 @@ function renderPage(): string {
         }
       });
 
+      clearBtn?.addEventListener("click", async () => {
+        if (!confirm("Clear the current Wikipedia corpus and answer history?")) return;
+        lockButtons(true);
+        try {
+          await post("/api/clear", {});
+          window.location.reload();
+        } catch (error) {
+          alert(error.message || String(error));
+        } finally {
+          lockButtons(false);
+        }
+      });
+
       refreshBtn?.addEventListener("click", () => window.location.reload());
     </script>
   </body>
@@ -1115,9 +1187,22 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       currentQuestion: state.currentQuestion,
       selectedModel: state.selectedModel,
       lastError: state.lastError,
+      mismatchWarning: state.currentQuestion ? corpusMismatchWarning(state.currentQuestion) : null,
       status: getStatus(),
       hasAnswer: !!state.lastResult,
     });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/clear") {
+    if (state.busy) {
+      json(res, 409, { error: "The app is already processing another request." });
+      return;
+    }
+
+    clearCorpus();
+    addHistory("clear", "Cleared corpus", "Removed local Wikipedia corpus, index, manifest, and answer state.");
+    json(res, 200, { ok: true, status: getStatus() });
     return;
   }
 
@@ -1171,8 +1256,15 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     const body = await readJsonBody(req);
     const question = String(body.question ?? "").trim();
     const model = normalizeModel(body.model);
+    const allowMismatch = body.allowMismatch === true;
     if (!question) {
       json(res, 400, { error: "Question is required." });
+      return;
+    }
+
+    const mismatch = corpusMismatchWarning(question);
+    if (mismatch && !allowMismatch) {
+      json(res, 409, { error: mismatch, mismatch: true });
       return;
     }
 
@@ -1214,8 +1306,15 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
     const body = await readJsonBody(req);
     const question = String(body.question ?? "").trim();
+    const allowMismatch = body.allowMismatch === true;
     if (!question) {
       json(res, 400, { error: "Question is required." });
+      return;
+    }
+
+    const mismatch = corpusMismatchWarning(question);
+    if (mismatch && !allowMismatch) {
+      json(res, 409, { error: mismatch, mismatch: true });
       return;
     }
 
