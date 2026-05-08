@@ -46,6 +46,9 @@ from `https://github.com/manit0700/qmd.git`, prepares SFT and preference data,
 trains SFT, runs DPO preference tuning, exports GGUF, and writes artifacts to
 `/kaggle/working`.
 
+The task explicitly requests `NvidiaTeslaT4` because Kaggle may otherwise assign
+P100, which is not compatible with Kaggle's current PyTorch CUDA build.
+
 Kaggle notebook URL:
 
 ```text

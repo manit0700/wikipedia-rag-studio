@@ -86,7 +86,7 @@
     {
       "label": "Kaggle: Push Wiki RAG Training Job",
       "type": "shell",
-      "command": "${env:HOME}/Library/Python/3.12/bin/kaggle kernels push -p finetune/kaggle",
+      "command": "${env:HOME}/Library/Python/3.12/bin/kaggle kernels push -p finetune/kaggle --accelerator NvidiaTeslaT4",
       "options": {
         "cwd": "${workspaceFolder}"
       },
