@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
@@ -311,7 +311,17 @@ function formatSnippetFromBody(body: string, question: string): string {
   const cleaned = snippet
     .replace(/^@@.*\n/, "")
     .trim();
+  const intro = body
+    .split(/\n{2,}/)
+    .map((part) => part.trim())
+    .find((part) => part && !part.startsWith("# ") && !part.startsWith("Source:") && !part.startsWith("Topic:"))
+    ?.slice(0, 420)
+    .trim() ?? "";
+  const broadCompanyQuestion = /\b(tell me|overview|about|company|corporation|business|brand|what is|who is)\b/i.test(question);
 
+  if (broadCompanyQuestion && intro) {
+    return intro;
+  }
   return cleaned.length > 0 ? cleaned : body.slice(0, 420).trim();
 }
 
@@ -372,19 +382,39 @@ function buildCitedAnswerPrompt(question: string, citations: WikipediaCitation[]
     "End with a Sources section listing only cited source titles and URLs.",
     "If the sources do not support the answer, say so clearly.",
     "Keep the answer to 3-6 sentences unless the user asks for more detail.",
+    "Output format:",
+    "Answer:",
+    "<short answer with citations>",
+    "",
+    "Sources:",
+    "[1] <title> - <url>",
     "",
     `Question: ${question}`,
     "",
-    "Sources:",
+    "Evidence:",
     sources,
   ].join("\n");
 }
 
 function cleanGeneratedAnswer(answer: string): string {
-  return answer
+  const cleaned = answer
     .replace(/<think>[\s\S]*?<\/think>/g, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+  return cleaned.replace(/^Answer:\s*/i, "").trim();
+}
+
+function isUsableGeneratedAnswer(answer: string, citationCount: number): boolean {
+  if (!answer || answer.length < 20) {
+    return false;
+  }
+
+  if (/^\[\d+\]\s+.+https?:\/\//.test(answer)) {
+    return false;
+  }
+
+  const ids = Array.from(answer.matchAll(/\[(\d+)\]/g)).map((match) => Number(match[1]));
+  return ids.length > 0 && ids.every((id) => Number.isInteger(id) && id >= 1 && id <= citationCount);
 }
 
 async function generateWithOllama(question: string, citations: WikipediaCitation[]): Promise<{ answer: string; provider: "ollama" } | null> {
@@ -427,6 +457,9 @@ async function generateWithOllama(question: string, citations: WikipediaCitation
 
     const payload = await response.json() as { response?: string };
     const answer = cleanGeneratedAnswer(payload.response ?? "");
+    if (!isUsableGeneratedAnswer(answer, citations.length)) {
+      return null;
+    }
     return answer ? { answer, provider: "ollama" } : null;
   } catch {
     return null;
@@ -441,7 +474,7 @@ function fallbackAnswer(question: string, citations: WikipediaCitation[]): strin
   }
 
   const lines = citations.slice(0, 3).map((citation) => {
-    const sentence = citation.excerpt.split(/\.(?=\s|$)/).find(Boolean)?.trim() || citation.excerpt.trim();
+    const sentence = firstUsefulSentence(citation.excerpt);
     return `- [${citation.id}] ${sentence}`;
   });
 
@@ -451,6 +484,22 @@ function fallbackAnswer(question: string, citations: WikipediaCitation[]): strin
     "",
     "Sources are listed below with titles and URLs.",
   ].join("\n");
+}
+
+function firstUsefulSentence(excerpt: string): string {
+  const protectedText = excerpt
+    .replace(/\bInc\./g, "Inc<dot>")
+    .replace(/\bU\.S\./g, "U<dot>S<dot>")
+    .replace(/\bU\.K\./g, "U<dot>K<dot>")
+    .replace(/\bMr\./g, "Mr<dot>")
+    .replace(/\bMs\./g, "Ms<dot>")
+    .replace(/\bDr\./g, "Dr<dot>");
+  const sentence = protectedText.split(/\.(?=\s|$)/).find((part) => part.trim().length > 0)?.trim() || protectedText.trim();
+
+  return sentence
+    .replace(/<dot>/g, ".")
+    .replace(/\s+/g, " ")
+    .slice(0, 260);
 }
 
 function renderSources(citations: WikipediaCitation[]): string {
@@ -464,6 +513,62 @@ function renderSources(citations: WikipediaCitation[]): string {
   ].join("\n");
 }
 
+function questionTerms(value: string): string[] {
+  const stop = new Set(["about", "tell", "thing", "things", "all", "what", "who", "why", "how", "the", "and", "for", "with", "from", "into"]);
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((term) => term.length > 2 && !stop.has(term));
+}
+
+function rankCitations(question: string, topic: string | null, citations: WikipediaCitation[]): WikipediaCitation[] {
+  const terms = questionTerms(question);
+  const wantsCompany = /\b(company|corporation|business|brand|revenue|headquarter|founded|founder)\b/i.test(question);
+  const wantsMythology = /\b(myth|mythology|goddess|greek|roman)\b/i.test(question);
+  const normalizedTopic = topic?.toLowerCase().trim();
+
+  return citations
+    .map((citation, originalIndex) => {
+      const title = citation.title.toLowerCase();
+      const excerpt = citation.excerpt.toLowerCase();
+      let rank = citation.score;
+
+      if (normalizedTopic && title.includes(normalizedTopic)) rank += 4;
+      if (terms.some((term) => title.includes(term))) rank += 3;
+      if (terms.some((term) => excerpt.includes(term))) rank += 1;
+      if (wantsCompany && /\b(inc|company|corporation|corp|ltd|limited)\b/.test(title)) rank += 6;
+      if (wantsCompany && /\b(company|corporation|business|brand|revenue|headquartered)\b/.test(excerpt)) rank += 3;
+      if (wantsCompany && /\b(mythology|goddess|disambiguation)\b/.test(title)) rank -= 8;
+      if (!wantsMythology && /\b(mythology|goddess)\b/.test(title)) rank -= 4;
+      if (/\bdisambiguation\b/.test(title)) rank -= 6;
+
+      return { citation, originalIndex, rank };
+    })
+    .sort((a, b) => b.rank - a.rank || a.originalIndex - b.originalIndex)
+    .map(({ citation }, index) => ({ ...citation, id: index + 1 }));
+}
+
+function selectRelevantCitations(question: string, citations: WikipediaCitation[], limit: number): WikipediaCitation[] {
+  const wantsCompany = /\b(company|corporation|business|brand|revenue|headquarter|founded|founder)\b/i.test(question);
+  let selected = citations;
+
+  if (wantsCompany) {
+    const companyRelevant = citations.filter((citation) => {
+      const text = `${citation.title}\n${citation.excerpt}`.toLowerCase();
+      if (/\b(project nike|mythology|goddess)\b/.test(text)) return false;
+      if (citation.title.toLowerCase() === "nike" && /\boften refers to\b/i.test(citation.excerpt)) return false;
+      return /\b(inc|company|corporation|corp|business|brand|revenue|headquartered|retailer|supplier|founded)\b/.test(text);
+    });
+
+    if (companyRelevant.length > 0) {
+      selected = companyRelevant;
+    }
+  }
+
+  return selected.slice(0, limit).map((citation, index) => ({ ...citation, id: index + 1 }));
+}
+
 async function toCitation(
   index: number,
   result: SearchResult | HybridQueryResult,
@@ -471,7 +576,8 @@ async function toCitation(
   question: string,
   store: Awaited<ReturnType<typeof openStore>>
 ): WikipediaCitation {
-  const source = manifest[result.displayPath] ?? { title: result.title, url: wikiPageUrl(result.title) };
+  const displayPathKey = result.displayPath.replace(/^wikipedia\//, "");
+  const source = manifest[result.displayPath] ?? manifest[displayPathKey] ?? { title: result.title, url: wikiPageUrl(result.title) };
   const filepath = "filepath" in result ? result.filepath : result.file;
   let body = "body" in result && result.body ? result.body : "";
 
@@ -493,6 +599,26 @@ async function toCitation(
     displayPath: result.displayPath,
     score: result.score,
     excerpt: formatSnippetFromBody(body, question),
+  };
+}
+
+async function citationFromManifest(
+  index: number,
+  displayPath: string,
+  source: { title: string; url: string },
+  question: string,
+  store: Awaited<ReturnType<typeof openStore>>
+): Promise<WikipediaCitation> {
+  const loaded = await store.get(`qmd://wikipedia/${displayPath}`, { includeBody: true });
+  const body = !("error" in loaded) ? loaded.body ?? "" : "";
+
+  return {
+    id: index + 1,
+    title: source.title,
+    url: source.url,
+    displayPath,
+    score: 0,
+    excerpt: formatSnippetFromBody(body || source.title, question),
   };
 }
 
@@ -524,25 +650,20 @@ export async function answerWikipediaQuestion(
             limit: maxResults,
           });
 
-    const citations =
-      selectedResults.length > 0
-        ? await Promise.all(
-            selectedResults.map((result, index) => toCitation(index, result, manifest.documents, question, store))
-          )
-        : await Promise.all(
-            Object.entries(manifest.documents).map(async ([displayPath, source], index) => {
-              const loaded = await store.get(`qmd://wikipedia/${displayPath}`, { includeBody: true });
-              const body = !("error" in loaded) ? loaded.body ?? "" : "";
-              return {
-                id: index + 1,
-                title: source.title,
-                url: source.url,
-                displayPath,
-                score: 0,
-                excerpt: formatSnippetFromBody(body || source.title, question),
-              };
-            })
-          );
+    const searchCitations = await Promise.all(
+      selectedResults.map((result, index) => toCitation(index, result, manifest.documents, question, store))
+    );
+    const seenDisplayPaths = new Set(searchCitations.map((citation) => basename(citation.displayPath)));
+    const manifestCitations = await Promise.all(
+      Object.entries(manifest.documents)
+        .filter(([displayPath]) => !seenDisplayPaths.has(displayPath))
+        .map(([displayPath, source], index) => citationFromManifest(searchCitations.length + index, displayPath, source, question, store))
+    );
+    const citations = selectRelevantCitations(
+      question,
+      rankCitations(question, manifest.topic, [...searchCitations, ...manifestCitations]),
+      maxResults
+    );
     const generated =
       await generateWithOllama(question, citations) ??
       await maybeGenerateAnswer(question, citations, store);
