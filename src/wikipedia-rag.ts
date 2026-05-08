@@ -157,6 +157,23 @@ async function fetchWikipediaPages(titles: string[]): Promise<WikipediaPage[]> {
     return [];
   }
 
+  const pages: WikipediaPage[] = [];
+  const seen = new Set<number>();
+
+  for (const title of titles) {
+    const page = await fetchWikipediaPage(title);
+    if (!page || seen.has(page.pageid)) {
+      continue;
+    }
+
+    seen.add(page.pageid);
+    pages.push(page);
+  }
+
+  return pages;
+}
+
+async function fetchWikipediaPage(title: string): Promise<WikipediaPage | null> {
   const url = new URL("https://en.wikipedia.org/w/api.php");
   url.searchParams.set("action", "query");
   url.searchParams.set("format", "json");
@@ -166,7 +183,7 @@ async function fetchWikipediaPages(titles: string[]): Promise<WikipediaPage[]> {
   url.searchParams.set("explaintext", "1");
   url.searchParams.set("exsectionformat", "plain");
   url.searchParams.set("inprop", "url");
-  url.searchParams.set("titles", titles.join("|"));
+  url.searchParams.set("titles", title);
 
   type Response = {
     query?: {
@@ -176,15 +193,23 @@ async function fetchWikipediaPages(titles: string[]): Promise<WikipediaPage[]> {
 
   const payload = await fetchJson<Response>(url);
   const pages = Object.values(payload.query?.pages ?? {}) as Array<{ pageid: number; title: string; fullurl?: string; extract?: string }>;
+  const page = pages[0];
 
-  return pages
-    .map((page) => ({
-      pageid: page.pageid,
-      title: page.title,
-      url: page.fullurl ?? wikiPageUrl(page.title),
-      extract: page.extract?.trim() || "",
-    }))
-    .filter((page) => page.extract.length > 0);
+  if (!page || page.pageid < 0) {
+    return null;
+  }
+
+  const extract = page.extract?.trim() || "";
+  if (!extract) {
+    return null;
+  }
+
+  return {
+    pageid: page.pageid,
+    title: page.title,
+    url: page.fullurl ?? wikiPageUrl(page.title),
+    extract,
+  };
 }
 
 function manifestFilePath(paths: WikipediaRagPaths): string {

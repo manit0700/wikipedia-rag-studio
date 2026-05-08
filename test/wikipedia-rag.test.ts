@@ -57,7 +57,11 @@ function wikipediaPageResponse() {
 function stubWikipediaFetch() {
   const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
     const url = typeof input === "string" ? input : input.toString();
-    const payload = url.includes("list=search") ? wikipediaSearchResponse() : wikipediaPageResponse();
+    const parsed = new URL(url);
+    const title = parsed.searchParams.get("titles");
+    const fullPages = wikipediaPageResponse().query.pages;
+    const page = title === "Analytical engine" ? fullPages["2"] : fullPages["1"];
+    const payload = url.includes("list=search") ? wikipediaSearchResponse() : { query: { pages: { [String(page.pageid)]: page } } };
     return new Response(JSON.stringify(payload), {
       status: 200,
       headers: { "content-type": "application/json" },
@@ -89,24 +93,22 @@ function stubAmbiguousWikipediaFetch() {
       });
     }
 
-    return new Response(JSON.stringify({
-      query: {
-        pages: {
-          "1": {
-            pageid: 1,
-            title: "Nike",
-            fullurl: "https://en.wikipedia.org/wiki/Nike",
-            extract: "Nike may refer to Nike, Inc., Nike of Greek mythology, or other uses.",
-          },
-          "3": {
-            pageid: 3,
-            title: "Nike, Inc.",
-            fullurl: "https://en.wikipedia.org/wiki/Nike,_Inc.",
-            extract: "Nike, Inc. is an American athletic footwear and apparel corporation headquartered near Beaverton, Oregon.",
-          },
-        },
-      },
-    }), {
+    const title = parsed.searchParams.get("titles");
+    const page = title === "Nike, Inc."
+      ? {
+          pageid: 3,
+          title: "Nike, Inc.",
+          fullurl: "https://en.wikipedia.org/wiki/Nike,_Inc.",
+          extract: "Nike, Inc. is an American athletic footwear and apparel corporation headquartered near Beaverton, Oregon.",
+        }
+      : {
+          pageid: 1,
+          title: "Nike",
+          fullurl: "https://en.wikipedia.org/wiki/Nike",
+          extract: "Nike may refer to Nike, Inc., Nike of Greek mythology, or other uses.",
+        };
+
+    return new Response(JSON.stringify({ query: { pages: { [String(page.pageid)]: page } } }), {
       status: 200,
       headers: { "content-type": "application/json" },
     });
