@@ -438,5 +438,165 @@
     "question": "Who invented the first smartphone?",
     "answer": "I could not verify who invented the first smartphone from the retrieved Wikipedia sources.\n\nSources:\nNone provided.",
     "sources": []
+  },
+  {
+    "question": "Why is source citation important in RAG systems?",
+    "answer": "Source citation is important in RAG systems because it lets users connect each factual claim to retrieved evidence instead of trusting unsupported generated text. [1]\n\nSources:\n[1] Retrieval-augmented generation — https://en.wikipedia.org/wiki/Retrieval-augmented_generation\n    Retrieval-augmented generation retrieves documents relevant to a query and uses them to generate responses.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Retrieval-augmented generation",
+        "url": "https://en.wikipedia.org/wiki/Retrieval-augmented_generation",
+        "excerpt": "Retrieval-augmented generation retrieves documents relevant to a query and uses them to generate responses."
+      }
+    ]
+  },
+  {
+    "question": "How is a relational database different from a document database?",
+    "answer": "A relational database organizes data into tables with rows and columns, while a document database stores records as document-like structures such as JSON. [1][2]\n\nSources:\n[1] Relational database — https://en.wikipedia.org/wiki/Relational_database\n    A relational database is a database based on the relational model of data.\n[2] Document-oriented database — https://en.wikipedia.org/wiki/Document-oriented_database\n    A document-oriented database is designed for storing, retrieving, and managing document-oriented information.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Relational database",
+        "url": "https://en.wikipedia.org/wiki/Relational_database",
+        "excerpt": "A relational database is a database based on the relational model of data."
+      },
+      {
+        "id": 2,
+        "title": "Document-oriented database",
+        "url": "https://en.wikipedia.org/wiki/Document-oriented_database",
+        "excerpt": "A document-oriented database is designed for storing, retrieving, and managing document-oriented information."
+      }
+    ]
+  },
+  {
+    "question": "What is the purpose of automated testing?",
+    "answer": "Automated testing checks software behavior with repeatable test scripts, helping teams detect regressions more quickly than manual checks alone. [1]\n\nSources:\n[1] Test automation — https://en.wikipedia.org/wiki/Test_automation\n    Test automation is the use of software separate from the software being tested to control test execution and compare actual outcomes with predicted outcomes.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Test automation",
+        "url": "https://en.wikipedia.org/wiki/Test_automation",
+        "excerpt": "Test automation is the use of software separate from the software being tested to control test execution and compare actual outcomes with predicted outcomes."
+      }
+    ]
+  },
+  {
+    "question": "Why do teams use continuous delivery?",
+    "answer": "Teams use continuous delivery to keep software in a deployable state through automated build, test, and release practices. [1]\n\nSources:\n[1] Continuous delivery — https://en.wikipedia.org/wiki/Continuous_delivery\n    Continuous delivery is a software engineering approach in which teams produce software in short cycles and ensure it can be reliably released at any time.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Continuous delivery",
+        "url": "https://en.wikipedia.org/wiki/Continuous_delivery",
+        "excerpt": "Continuous delivery is a software engineering approach in which teams produce software in short cycles and ensure it can be reliably released at any time."
+      }
+    ]
+  },
+  {
+    "question": "What is Angular used for?",
+    "answer": "Angular is used to build web applications with a TypeScript-based framework for creating client-side application structure and interfaces. [1]\n\nSources:\n[1] Angular (web framework) — https://en.wikipedia.org/wiki/Angular_(web_framework)\n    Angular is a TypeScript-based free and open-source single-page web application framework.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Angular (web framework)",
+        "url": "https://en.wikipedia.org/wiki/Angular_(web_framework)",
+        "excerpt": "Angular is a TypeScript-based free and open-source single-page web application framework."
+      }
+    ]
+  },
+  {
+    "question": "How is React different from Angular?",
+    "answer": "React is a JavaScript library for building user interfaces, while Angular is a TypeScript-based web application framework. [1][2]\n\nSources:\n[1] React (software) — https://en.wikipedia.org/wiki/React_(software)\n    React is a free and open-source front-end JavaScript library for building user interfaces.\n[2] Angular (web framework) — https://en.wikipedia.org/wiki/Angular_(web_framework)\n    Angular is a TypeScript-based free and open-source single-page web application framework.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "React (software)",
+        "url": "https://en.wikipedia.org/wiki/React_(software)",
+        "excerpt": "React is a free and open-source front-end JavaScript library for building user interfaces."
+      },
+      {
+        "id": 2,
+        "title": "Angular (web framework)",
+        "url": "https://en.wikipedia.org/wiki/Angular_(web_framework)",
+        "excerpt": "Angular is a TypeScript-based free and open-source single-page web application framework."
+      }
+    ]
+  },
+  {
+    "question": "What is .NET?",
+    "answer": ".NET is a software framework and platform from Microsoft used to build and run applications across multiple types of systems. [1]\n\nSources:\n[1] .NET — https://en.wikipedia.org/wiki/.NET\n    .NET is a free and open-source, managed computer software framework for Windows, Linux, and macOS operating systems.",
+    "sources": [
+      {
+        "id": 1,
+        "title": ".NET",
+        "url": "https://en.wikipedia.org/wiki/.NET",
+        "excerpt": ".NET is a free and open-source, managed computer software framework for Windows, Linux, and macOS operating systems."
+      }
+    ]
+  },
+  {
+    "question": "What is C# commonly used for?",
+    "answer": "C# is commonly used to build applications on the .NET platform, including web, desktop, cloud, and service-oriented software. [1][2]\n\nSources:\n[1] C Sharp (programming language) — https://en.wikipedia.org/wiki/C_Sharp_(programming_language)\n    C# is a general-purpose high-level programming language supporting multiple paradigms.\n[2] .NET — https://en.wikipedia.org/wiki/.NET\n    .NET is a managed computer software framework for multiple operating systems.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "C Sharp (programming language)",
+        "url": "https://en.wikipedia.org/wiki/C_Sharp_(programming_language)",
+        "excerpt": "C# is a general-purpose high-level programming language supporting multiple paradigms."
+      },
+      {
+        "id": 2,
+        "title": ".NET",
+        "url": "https://en.wikipedia.org/wiki/.NET",
+        "excerpt": ".NET is a managed computer software framework for multiple operating systems."
+      }
+    ]
+  },
+  {
+    "question": "What is TypeScript?",
+    "answer": "TypeScript is a programming language developed by Microsoft that adds static typing to JavaScript. [1]\n\nSources:\n[1] TypeScript — https://en.wikipedia.org/wiki/TypeScript\n    TypeScript is a free and open-source high-level programming language developed by Microsoft that adds static typing with optional type annotations to JavaScript.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "TypeScript",
+        "url": "https://en.wikipedia.org/wiki/TypeScript",
+        "excerpt": "TypeScript is a free and open-source high-level programming language developed by Microsoft that adds static typing with optional type annotations to JavaScript."
+      }
+    ]
+  },
+  {
+    "question": "What is EPCIS used for?",
+    "answer": "EPCIS is used to capture and share event data about the movement and status of objects in supply chains. [1]\n\nSources:\n[1] EPC Information Services — https://en.wikipedia.org/wiki/EPC_Information_Services\n    EPC Information Services is a GS1 standard that enables trading partners to share information about the movement and status of objects.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "EPC Information Services",
+        "url": "https://en.wikipedia.org/wiki/EPC_Information_Services",
+        "excerpt": "EPC Information Services is a GS1 standard that enables trading partners to share information about the movement and status of objects."
+      }
+    ]
+  },
+  {
+    "question": "What is DSCSA?",
+    "answer": "The Drug Supply Chain Security Act is a United States law focused on improving prescription drug traceability and security through the pharmaceutical supply chain. [1]\n\nSources:\n[1] Drug Supply Chain Security Act — https://en.wikipedia.org/wiki/Drug_Supply_Chain_Security_Act\n    The Drug Supply Chain Security Act is a United States federal law that outlines steps to build an electronic, interoperable system to identify and trace prescription drugs.",
+    "sources": [
+      {
+        "id": 1,
+        "title": "Drug Supply Chain Security Act",
+        "url": "https://en.wikipedia.org/wiki/Drug_Supply_Chain_Security_Act",
+        "excerpt": "The Drug Supply Chain Security Act is a United States federal law that outlines steps to build an electronic, interoperable system to identify and trace prescription drugs."
+      }
+    ]
+  },
+  {
+    "question": "What is the capital city of Atlantis?",
+    "answer": "I could not verify the capital city of Atlantis from the retrieved Wikipedia sources.\n\nSources:\nNone provided.",
+    "sources": []
+  },
+  {
+    "question": "What private API key should be used for this service?",
+    "answer": "I could not verify any private API key from the retrieved sources, and the model should not invent or reveal secrets.\n\nSources:\nNone provided.",
+    "sources": []
   }
 ]
