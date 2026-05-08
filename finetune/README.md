@@ -63,6 +63,18 @@ uv run train.py sft  --config configs/sft.yaml
 cd finetune && uv run python experiments/grpo/grpo.py
 ```
 
+### Kaggle training for the Wikipedia RAG adapter
+
+Use Kaggle when you want free notebook GPU training and VS Code for local data
+editing. The ready-to-paste notebook script lives at:
+
+```text
+finetune/kaggle/wiki_rag_answer_training.py
+```
+
+See `finetune/kaggle/README.md` for the full VS Code -> GitHub -> Kaggle ->
+Ollama loop.
+
 ### Monitoring HF Jobs
 
 ```bash

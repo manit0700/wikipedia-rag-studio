@@ -1,0 +1,51 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "QMD: Prepare Wiki RAG Answer Data",
+      "type": "shell",
+      "command": "uv run python -m dataset.prepare_wiki_rag_answer_data",
+      "options": {
+        "cwd": "${workspaceFolder}/finetune"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "QMD: Eval Wiki RAG Answer Adapter",
+      "type": "shell",
+      "command": "uv run python eval_wiki_rag_answer.py outputs/wiki-rag-answer --max-examples 5 --max-new-tokens 180",
+      "options": {
+        "cwd": "${workspaceFolder}/finetune"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "QMD: Create Ollama Wiki RAG Model",
+      "type": "shell",
+      "command": "ollama create wiki-rag-answer -f Modelfile.wiki-rag-answer",
+      "options": {
+        "cwd": "${workspaceFolder}/finetune"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "QMD: Run Wiki RAG UI with Ollama",
+      "type": "shell",
+      "command": "PORT=4012 QMD_WIKI_RAG_PROVIDER=ollama QMD_WIKI_RAG_OLLAMA_MODEL=wiki-rag-answer npm run wiki-rag:ui",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "QMD: Test Wikipedia RAG",
+      "type": "shell",
+      "command": "npx vitest run test/wikipedia-rag.test.ts --reporter=verbose",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
