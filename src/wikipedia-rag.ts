@@ -111,6 +111,47 @@ async function searchWikipedia(topic: string, limit: number): Promise<WikiSearch
   return payload.query?.search ?? [];
 }
 
+function buildWikipediaSearchQueries(topic: string): string[] {
+  const normalized = topic.trim().replace(/\s+/g, " ");
+  if (!normalized) {
+    return [];
+  }
+
+  const queries = [normalized];
+  const looksSpecific = /[()]/.test(normalized) || /\b(company|film|album|software|city|country|person|scientist|programmer)\b/i.test(normalized);
+  const wordCount = normalized.split(/\s+/).length;
+
+  if (!looksSpecific && wordCount <= 3) {
+    queries.push(`${normalized} company`);
+    queries.push(`${normalized} topic`);
+  }
+
+  return queries;
+}
+
+async function searchWikipediaForTopic(topic: string, limit: number): Promise<WikiSearchHit[]> {
+  const seen = new Set<number>();
+  const hits: WikiSearchHit[] = [];
+
+  for (const query of buildWikipediaSearchQueries(topic)) {
+    const remaining = Math.max(limit - hits.length, 1);
+    const queryHits = await searchWikipedia(query, Math.max(remaining, limit));
+
+    for (const hit of queryHits) {
+      if (seen.has(hit.pageid)) {
+        continue;
+      }
+      seen.add(hit.pageid);
+      hits.push(hit);
+      if (hits.length >= limit) {
+        return hits;
+      }
+    }
+  }
+
+  return hits;
+}
+
 async function fetchWikipediaPages(titles: string[]): Promise<WikipediaPage[]> {
   if (titles.length === 0) {
     return [];
@@ -223,7 +264,7 @@ export async function buildWikipediaCorpus(
   const maxPages = options.maxPages ?? 5;
   const paths = resolveWikipediaRagPaths(options.baseDir ?? repoRoot);
 
-  const hits = await searchWikipedia(topic, maxPages);
+  const hits = await searchWikipediaForTopic(topic, maxPages);
   const titles = hits.map((hit) => hit.title);
   const pages = await fetchWikipediaPages(titles);
   const documents = pages.map((page) => writeWikipediaDocument(paths, topic, page));
@@ -298,10 +339,14 @@ function buildCitedAnswerPrompt(question: string, citations: WikipediaCitation[]
     : "None provided.";
 
   return [
-    "Answer the question using only the provided sources.",
+    "You are a concise Wikipedia RAG answer model.",
+    "Answer the user's question using only the provided source excerpts.",
+    "Do not list possible page meanings unless the user asks for disambiguation.",
+    "Do not copy source titles as the answer; synthesize a short factual answer.",
     "Cite every factual claim with bracketed citations like [1].",
-    "End with a Sources section listing the cited source titles and URLs.",
+    "End with a Sources section listing only cited source titles and URLs.",
     "If the sources do not support the answer, say so clearly.",
+    "Keep the answer to 3-6 sentences unless the user asks for more detail.",
     "",
     `Question: ${question}`,
     "",

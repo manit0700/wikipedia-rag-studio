@@ -68,6 +68,54 @@ function stubWikipediaFetch() {
   return fetchMock;
 }
 
+function stubAmbiguousWikipediaFetch() {
+  const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const url = typeof input === "string" ? input : input.toString();
+    const parsed = new URL(url);
+
+    if (parsed.searchParams.get("list") === "search") {
+      const query = parsed.searchParams.get("srsearch") ?? "";
+      const search = query === "nike company"
+        ? [
+            { pageid: 3, title: "Nike, Inc.", snippet: "Nike, Inc. is an American athletic footwear and apparel corporation." },
+          ]
+        : [
+            { pageid: 1, title: "Nike", snippet: "Nike may refer to several topics." },
+          ];
+
+      return new Response(JSON.stringify({ query: { search } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({
+      query: {
+        pages: {
+          "1": {
+            pageid: 1,
+            title: "Nike",
+            fullurl: "https://en.wikipedia.org/wiki/Nike",
+            extract: "Nike may refer to Nike, Inc., Nike of Greek mythology, or other uses.",
+          },
+          "3": {
+            pageid: 3,
+            title: "Nike, Inc.",
+            fullurl: "https://en.wikipedia.org/wiki/Nike,_Inc.",
+            extract: "Nike, Inc. is an American athletic footwear and apparel corporation headquartered near Beaverton, Oregon.",
+          },
+        },
+      },
+    }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  });
+
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
 describe("wikipedia rag demo", () => {
   test("builds a corpus and persists a manifest", async () => {
     stubWikipediaFetch();
@@ -109,5 +157,19 @@ describe("wikipedia rag demo", () => {
     expect(answer.answer).toContain("Sources");
     expect(answer.answer).toContain("https://en.wikipedia.org/wiki/Ada_Lovelace");
     expect(answer.answer).toContain("https://en.wikipedia.org/wiki/Analytical_engine");
+  });
+
+  test("expands ambiguous short topics to include likely entity pages", async () => {
+    const fetchMock = stubAmbiguousWikipediaFetch();
+
+    const result = await buildWikipediaCorpus("nike", {
+      baseDir: testDir,
+      maxPages: 2,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(expect.objectContaining({
+      searchParams: expect.any(URLSearchParams),
+    }));
+    expect(result.pages.map((page) => page.title)).toContain("Nike, Inc.");
   });
 });
