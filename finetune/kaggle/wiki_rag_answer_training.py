@@ -9,6 +9,7 @@
 
 # %%
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -18,7 +19,7 @@ print("CUDA:", torch.cuda.is_available())
 print("GPU:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "NO GPU")
 
 # %%
-repo_dir = Path("/kaggle/working/qmd")
+repo_dir = Path("/tmp/qmd")
 if repo_dir.exists():
     subprocess.run(["git", "-C", str(repo_dir), "pull"], check=True)
 else:
@@ -50,7 +51,17 @@ subprocess.run(["uv", "run", "python", "-m", "dataset.prepare_wiki_rag_answer_da
 # config_path.write_text(config_text)
 
 # %%
-subprocess.run(["uv", "run", "python", "train.py", "sft", "--config", "configs/wiki_rag_answer.yaml"], check=True)
+train_result = subprocess.run(
+    ["uv", "run", "python", "train.py", "sft", "--config", "configs/wiki_rag_answer.yaml"],
+    check=False,
+)
+
+gguf = finetune_dir / "outputs/wiki-rag-answer/gguf/wiki-rag-answer-q4_k_m.gguf"
+if train_result.returncode != 0 and not gguf.exists():
+    raise subprocess.CalledProcessError(train_result.returncode, train_result.args)
+
+if train_result.returncode != 0 and gguf.exists():
+    print("Training command returned non-zero after GGUF export; continuing with artifact packaging.")
 
 # %%
 # The automatic eval in train.py may OOM after training/export. Run the focused evaluator after training.
@@ -70,7 +81,6 @@ subprocess.run(
 )
 
 # %%
-gguf = finetune_dir / "outputs/wiki-rag-answer/gguf/wiki-rag-answer-q4_k_m.gguf"
 if not gguf.exists():
     raise FileNotFoundError(f"Expected GGUF not found: {gguf}")
 
@@ -81,3 +91,5 @@ if zip_path.exists():
 subprocess.run(["zip", "-j", str(zip_path), str(gguf)], check=True)
 print("Download artifact:", zip_path)
 print("Size:", zip_path.stat().st_size / (1024 * 1024), "MB")
+
+shutil.rmtree(repo_dir, ignore_errors=True)
