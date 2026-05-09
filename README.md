@@ -45,22 +45,39 @@ Full source-audit view showing grounded answers, citation checks, and retrieved 
 
 ### Local Demo
 
-Start the portfolio UI:
+Copy the example environment file if you want to customize the port or model:
 
 ```sh
-cd /Users/manitdankhara/qmd
+cp .env.example .env
+```
+
+Start the portfolio UI with one command:
+
+```sh
+npm run wiki-rag:portfolio
+```
+
+The startup script checks:
+
+- whether the selected port is free,
+- whether Ollama is installed,
+- whether the selected Ollama model exists.
+
+Then open:
+
+```text
+http://127.0.0.1:4055
+```
+
+Manual equivalent:
+
+```sh
 PORT=4055 \
 QMD_WIKI_RAG_PROVIDER=ollama \
 QMD_WIKI_RAG_OLLAMA_MODEL=wiki-rag-answer-dpo \
 QMD_WIKI_RAG_OLLAMA_TIMEOUT_MS=45000 \
 QMD_WIKI_RAG_MAX_TOKENS=220 \
 npm run wiki-rag:ui
-```
-
-Then open:
-
-```text
-http://127.0.0.1:4055
 ```
 
 CLI example:
