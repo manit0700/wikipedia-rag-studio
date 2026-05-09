@@ -33,6 +33,16 @@ The project demonstrates an end-to-end local AI workflow:
 - DPO for preference tuning against bad or fake-citation answers
 - Kaggle GPU notebooks for free training runs
 
+### Screenshots
+
+Main local RAG studio with corpus controls, model selector, and SFT/DPO comparison:
+
+![Wikipedia RAG Studio main UI](assets/portfolio/wiki-rag-studio-main.png)
+
+Full source-audit view showing grounded answers, citation checks, and retrieved Wikipedia sources:
+
+![Wikipedia RAG Studio model comparison and source audit](assets/portfolio/wiki-rag-model-comparison.png)
+
 ### Local Demo
 
 Start the portfolio UI:
