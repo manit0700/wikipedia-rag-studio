@@ -109,6 +109,14 @@ DPO Wikipedia RAG answer evaluation: 96.0%
 SFT Wikipedia RAG answer evaluation: 92.0%
 ```
 
+The benchmark is reproducible from the local Ollama models:
+
+```sh
+npm run wiki-rag:benchmark -- --limit 10
+```
+
+See the full benchmark notes in [docs/wiki-rag-benchmark.md](docs/wiki-rag-benchmark.md).
+
 ### Why This Is Portfolio-Relevant
 
 This is not only a wrapper around an LLM. It shows the full applied AI engineering loop:
