@@ -1,5 +1,11 @@
 # QMD - Query Markup Documents
 
+[![Node.js](https://img.shields.io/badge/Node.js-22+-339933)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-RAG_Studio-3178C6)](https://www.typescriptlang.org/)
+[![Ollama](https://img.shields.io/badge/Ollama-local_GGUF-111827)](https://ollama.com/)
+[![Fine tuning](https://img.shields.io/badge/Fine--tuning-SFT_+_DPO-7C3AED)](finetune/README.md)
+[![Benchmark](https://img.shields.io/badge/RAG_eval-96%25_DPO-166534)](docs/wiki-rag-benchmark.md)
+
 An on-device search engine for everything you need to remember. Index your markdown notes, meeting transcripts, documentation, and knowledge bases. Search with keywords or natural language. Ideal for your agentic flows.
 
 QMD combines BM25 full-text search, vector semantic search, and LLM re-ranking—all running locally via node-llama-cpp with GGUF models.
@@ -11,6 +17,17 @@ You can read more about QMD's progress in the [CHANGELOG](CHANGELOG.md).
 ## Portfolio Project: Wikipedia RAG Studio
 
 This fork extends QMD with a local **Wikipedia RAG Studio**: a portfolio-ready RAG application that builds a topic-specific Wikipedia corpus, retrieves grounded evidence through QMD, answers with numbered citations, and compares a supervised fine-tuned model against a DPO-tuned model.
+
+**What I built:** a full local RAG product layer on top of QMD, including Wikipedia ingestion, cited answer generation, SFT/DPO model tuning, Ollama deployment, source auditing, and a reproducible benchmark workflow.
+
+| Area | Implementation |
+| --- | --- |
+| App | Local TypeScript web UI at `npm run wiki-rag:portfolio` |
+| Retrieval | QMD local search over generated Wikipedia markdown corpus |
+| Generation | Ollama with GGUF exports of Qwen/Qwen3-1.7B LoRA models |
+| Training | SFT for answer format, DPO for preference tuning |
+| Evaluation | Runtime benchmark plus adapter-level evaluator |
+| Result | DPO model reached 96.0% on the cited-answer evaluation |
 
 The project demonstrates an end-to-end local AI workflow:
 
@@ -42,6 +59,18 @@ Main local RAG studio with corpus controls, model selector, and SFT/DPO comparis
 Full source-audit view showing grounded answers, citation checks, and retrieved Wikipedia sources:
 
 ![Wikipedia RAG Studio model comparison and source audit](assets/portfolio/wiki-rag-model-comparison.png)
+
+### Project Map
+
+| Path | Purpose |
+| --- | --- |
+| `examples/wikipedia-rag-ui.ts` | Futuristic local RAG Studio UI and API server |
+| `examples/wikipedia-rag.ts` | CLI demo for ingesting topics and asking questions |
+| `src/wikipedia-rag.ts` | Wikipedia ingestion, corpus manifest, retrieval, and answer orchestration |
+| `finetune/` | SFT/DPO datasets, configs, training scripts, GGUF export, and Ollama Modelfiles |
+| `scripts/wiki-rag-start.sh` | One-command portfolio startup with environment checks |
+| `scripts/wiki-rag-benchmark.mjs` | Local Ollama benchmark for citation and source-quality behavior |
+| `docs/wiki-rag-benchmark.md` | Benchmark summary, scoring contract, and reproduction commands |
 
 ### Local Demo
 
