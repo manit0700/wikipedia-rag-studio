@@ -71,6 +71,7 @@ Full source-audit view showing grounded answers, citation checks, and retrieved 
 | `scripts/wiki-rag-start.sh` | One-command portfolio startup with environment checks |
 | `scripts/wiki-rag-benchmark.mjs` | Local Ollama benchmark for citation and source-quality behavior |
 | `docs/wiki-rag-benchmark.md` | Benchmark summary, scoring contract, and reproduction commands |
+| `docs/wiki-rag-demo-script.md` | Interview-ready demo script and talking points |
 
 ### Local Demo
 
@@ -145,6 +146,8 @@ npm run wiki-rag:benchmark -- --limit 10
 ```
 
 See the full benchmark notes in [docs/wiki-rag-benchmark.md](docs/wiki-rag-benchmark.md).
+
+For a short interview walkthrough, use [docs/wiki-rag-demo-script.md](docs/wiki-rag-demo-script.md).
 
 ### Why This Is Portfolio-Relevant
 

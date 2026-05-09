@@ -18,20 +18,21 @@ Each citation includes the article title, canonical Wikipedia URL, and a support
 
 ## Browser UI
 
-`npm run wiki-rag:ui` starts a local app at `http://127.0.0.1:4011`.
+`npm run wiki-rag:portfolio` starts the polished portfolio app at `http://127.0.0.1:4055`.
 Use it to:
 
 - build a corpus from a topic
 - ask a grounded question
-- run the full build-and-answer demo in one click
+- compare SFT and DPO model output
 - inspect the returned citations and local corpus state
+- audit whether the answer used valid retrieved sources
 
-## Optional synthesis
+## Ollama synthesis
 
-If you want the bot to draft a richer paragraph from the retrieved evidence, set:
+The portfolio demo uses Ollama by default. Recommended model:
 
 ```sh
-export QMD_WIKI_RAG_USE_LLM=1
+QMD_WIKI_RAG_OLLAMA_MODEL=wiki-rag-answer-dpo npm run wiki-rag:portfolio
 ```
 
-QMD will then use its local generation model if one is available.
+The trained GGUF model should already be imported into Ollama with the Modelfile in `finetune/`.
