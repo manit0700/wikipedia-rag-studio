@@ -8,6 +8,90 @@ QMD combines BM25 full-text search, vector semantic search, and LLM re-rankingâ€
 
 You can read more about QMD's progress in the [CHANGELOG](CHANGELOG.md).
 
+## Portfolio Project: Wikipedia RAG Studio
+
+This fork extends QMD with a local **Wikipedia RAG Studio**: a portfolio-ready RAG application that builds a topic-specific Wikipedia corpus, retrieves grounded evidence through QMD, answers with numbered citations, and compares a supervised fine-tuned model against a DPO-tuned model.
+
+The project demonstrates an end-to-end local AI workflow:
+
+- **Corpus builder:** fetches Wikipedia pages for a topic and stores them as local markdown documents.
+- **Retrieval:** uses QMD's local search/indexing layer to retrieve relevant evidence.
+- **Grounded generation:** answers through Ollama using a fine-tuned Qwen/Qwen3-1.7B GGUF model.
+- **Citation enforcement:** appends canonical source titles, URLs, and excerpts to every answer.
+- **Model comparison:** compares `wiki-rag-answer` SFT output with `wiki-rag-answer-dpo` preference-tuned output.
+- **Source audit UI:** checks citation validity, source coverage, fake URLs, and whether retrieved evidence is actually used.
+- **Corpus safety:** warns when the current corpus topic does not match the user's question.
+
+### Tech Stack
+
+- TypeScript / Node.js
+- QMD local search and SQLite index
+- Wikipedia API
+- Ollama + local GGUF models
+- Qwen/Qwen3-1.7B LoRA fine-tuning
+- SFT for cited-answer formatting
+- DPO for preference tuning against bad or fake-citation answers
+- Kaggle GPU notebooks for free training runs
+
+### Local Demo
+
+Start the portfolio UI:
+
+```sh
+cd /Users/manitdankhara/qmd
+PORT=4055 \
+QMD_WIKI_RAG_PROVIDER=ollama \
+QMD_WIKI_RAG_OLLAMA_MODEL=wiki-rag-answer-dpo \
+QMD_WIKI_RAG_OLLAMA_TIMEOUT_MS=45000 \
+QMD_WIKI_RAG_MAX_TOKENS=220 \
+npm run wiki-rag:ui
+```
+
+Then open:
+
+```text
+http://127.0.0.1:4055
+```
+
+CLI example:
+
+```sh
+QMD_WIKI_RAG_PROVIDER=ollama \
+QMD_WIKI_RAG_OLLAMA_MODEL=wiki-rag-answer-dpo \
+npm run wiki-rag:ask -- "tell me about Nike as a company"
+```
+
+### Fine-Tuning Workflow
+
+The Wikipedia answer model is trained in two stages:
+
+1. **SFT:** teaches the model the required RAG answer format: concise answer, inline citations, and a `Sources` section.
+2. **DPO:** teaches the model to prefer grounded, source-backed answers over generic answers, search-query expansions, invalid citations, and fake sources.
+
+The trained GGUF models are loaded into Ollama:
+
+```sh
+ollama create wiki-rag-answer -f finetune/Modelfile.wiki-rag-answer
+ollama create wiki-rag-answer-dpo -f finetune/Modelfile.wiki-rag-answer-dpo
+```
+
+Current evaluation result from the project workflow:
+
+```text
+DPO Wikipedia RAG answer evaluation: 96.0%
+SFT Wikipedia RAG answer evaluation: 92.0%
+```
+
+### Why This Is Portfolio-Relevant
+
+This is not only a wrapper around an LLM. It shows the full applied AI engineering loop:
+
+- retrieve reliable evidence,
+- train a model to follow a citation contract,
+- preference-tune against common failure modes,
+- validate answers with a source-audit UI,
+- run the full system locally with Ollama.
+
 ## Quick Start
 
 ```sh
