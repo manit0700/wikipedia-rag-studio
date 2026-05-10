@@ -25,7 +25,7 @@ repo_dir = Path("/tmp/qmd")
 if repo_dir.exists():
     subprocess.run(["git", "-C", str(repo_dir), "pull"], check=True)
 else:
-    subprocess.run(["git", "clone", "https://github.com/manit0700/qmd.git", str(repo_dir)], check=True)
+    subprocess.run(["git", "clone", "https://github.com/manit0700/wikipedia-rag-studio.git", str(repo_dir)], check=True)
 
 finetune_dir = repo_dir / "finetune"
 os.chdir(finetune_dir)

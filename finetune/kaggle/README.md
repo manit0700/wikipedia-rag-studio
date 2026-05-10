@@ -42,7 +42,7 @@ Useful tasks:
 
 The push task uploads `finetune/kaggle/wiki_rag_answer_training.py` using
 `finetune/kaggle/kernel-metadata.json`. The script then clones the latest code
-from `https://github.com/manit0700/qmd.git`, prepares SFT and preference data,
+from `https://github.com/manit0700/wikipedia-rag-studio.git`, prepares SFT and preference data,
 trains SFT, runs DPO preference tuning, exports GGUF, and writes artifacts to
 `/kaggle/working`.
 
@@ -68,7 +68,7 @@ https://www.kaggle.com/code/manitdankhara/qmd-wikipedia-rag-answer-lora-training
 The notebook clones:
 
 ```text
-https://github.com/manit0700/qmd.git
+https://github.com/manit0700/wikipedia-rag-studio.git
 ```
 
 and trains:
@@ -127,7 +127,7 @@ ollama create wiki-rag-answer-dpo -f Modelfile.wiki-rag-answer-dpo
 
 1. Edit `finetune/data/wiki_rag_answer_sources.json`.
 2. Run the VS Code task `QMD: Prepare Wiki RAG Answer Data`.
-3. Commit and push to `https://github.com/manit0700/qmd`.
+3. Commit and push to `https://github.com/manit0700/wikipedia-rag-studio`.
 4. Rerun the Kaggle notebook.
 5. Download the new `wiki-rag-answer-q4.zip`.
 6. Recreate the Ollama model locally.
